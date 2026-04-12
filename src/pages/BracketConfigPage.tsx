@@ -1,17 +1,22 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from 'react'
 import type Geom3 from '@jscad/modeling/src/geometries/geom3/type'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { PreviewViewport } from '../components/PreviewViewport'
 import { generateFromStrategy, type ParamRecord } from '../generators/registry'
 import { geom3ToStlBlob } from '../geometry/stlExport'
 import { getTemplateById } from '../registry/loadTemplates'
 import { defaultParamsFromTemplate } from '../utils/params'
-import { runBracketChecks } from '../validation/bracketChecks'
+import {
+  computeCustomHoleRangeFinding,
+  computeParamRangeFindings,
+  runBracketChecks,
+} from '../validation/bracketChecks'
 import type { ProcessId } from '../data/processes'
 import { PROCESS_PRESETS } from '../data/processes'
 import { MOUNTING_BOLT_SELECT_OPTIONS, resolveClearanceHoleDiameterMm } from '../data/mountingHardware'
 import type { BracketTemplate, ParameterGroup } from '../types/template'
+import { maxHoleRowsAlongWidth } from '../geometry/holeLayout'
 
 const GROUP_ORDER: ParameterGroup[] = [
   'dimensions',
@@ -113,10 +118,12 @@ function AccordionPanel({
 }
 
 function BracketConfigurator({ template }: { template: BracketTemplate }) {
+  const location = useLocation()
   const defaults = useMemo(() => mergeFormDefaults(template), [template])
 
   const form = useForm<Record<string, unknown>>({
     defaultValues: defaults,
+    mode: 'onChange',
   })
 
   /* eslint-disable-next-line react-hooks/incompatible-library -- RHF watch drives live preview */
@@ -137,34 +144,8 @@ function BracketConfigurator({ template }: { template: BracketTemplate }) {
   const processId = (watched['processId'] ?? 'fdm_pla_abs') as ProcessId
   const thickness = Number(watched['thickness'] ?? 3)
   const mountingBolt = String(watched['mountingBolt'] ?? 'M5')
-  const customHole = Number(watched['holeDiameter'] ?? 4.5)
-  const effectiveHoleD = resolveClearanceHoleDiameterMm(mountingBolt, customHole)
-
-  const findings = useMemo(() => {
-    const eo = Number(watched['edgeOffset'] ?? 0)
-    return runBracketChecks({
-      processId,
-      wallThicknessMm: thickness,
-      bridgeSpanMm: undefined,
-      holeDiameterMm: effectiveHoleD || undefined,
-      holeEdgeDistanceMm: eo || undefined,
-      flangeLengthMm:
-        Number(watched['leftFlangeHeight'] ?? watched['leg1Length'] ?? 0) || undefined,
-    })
-  }, [watched, processId, thickness, effectiveHoleD])
-
-  function downloadStl() {
-    if (!geometry) return
-    const blob = geom3ToStlBlob(geometry)
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${template.id}.stl`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const processHelp = PROCESS_PRESETS.find((p) => p.id === processId)
+  const customHoleDiameterMm = Number(watched['holeDiameter'] ?? 4.5)
+  const effectiveHoleD = resolveClearanceHoleDiameterMm(mountingBolt, customHoleDiameterMm)
 
   const visibleParams = useMemo(() => {
     let list = template.parameters
@@ -198,6 +179,86 @@ function BracketConfigurator({ template }: { template: BracketTemplate }) {
     setOpenSection((prev) => (prev === id ? null : id))
   }
 
+  /** Re-entering the same bracket route (new `location.key`) restores factory defaults — matches bookmark/share expectations. */
+  useEffect(() => {
+    form.reset(mergeFormDefaults(template))
+    const firstGroup = GROUP_ORDER.find((g) =>
+      template.parameters.some((p) => p.group === g && !p.advanced && p.key !== 'holeDiameter'),
+    )
+    setOpenSection(firstGroup ? `group-${firstGroup}` : hasHoles ? 'bolt' : 'process')
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: remount defaults + same-route navigation via location.key
+  }, [location.key, template])
+
+  const findings = useMemo(() => {
+    const eo = Number(watched['edgeOffset'] ?? 0)
+    const base = runBracketChecks({
+      processId,
+      templateId: template.id,
+      wallThicknessMm: thickness,
+      bridgeSpanMm: undefined,
+      holeDiameterMm: effectiveHoleD || undefined,
+      holeEdgeDistanceMm: eo || undefined,
+      flangeLengthMm:
+        Number(watched['leftFlangeHeight'] ?? watched['leg1Length'] ?? 0) || undefined,
+      innerBendRadiusMm:
+        template.id === 'l-bracket' ? Number(watched['innerBendRadius'] ?? 0) : undefined,
+      leg1LengthMm: template.id === 'l-bracket' ? Number(watched['leg1Length'] ?? 0) : undefined,
+      leg2LengthMm: template.id === 'l-bracket' ? Number(watched['leg2Length'] ?? 0) : undefined,
+      leftFlangeHeightMm:
+        template.id === 'u-channel' ? Number(watched['leftFlangeHeight'] ?? 0) : undefined,
+      rightFlangeHeightMm:
+        template.id === 'u-channel' ? Number(watched['rightFlangeHeight'] ?? 0) : undefined,
+    })
+    const rangeFromTemplate = computeParamRangeFindings(visibleParams, watched)
+    const customHoleRange = computeCustomHoleRangeFinding(mountingBolt, customHoleDiameterMm)
+    return [...base, ...rangeFromTemplate, ...customHoleRange]
+  }, [watched, processId, thickness, effectiveHoleD, template.id, visibleParams, mountingBolt, customHoleDiameterMm])
+
+  const errorFindings = useMemo(() => findings.filter((f) => f.severity === 'error'), [findings])
+  const warningFindings = useMemo(() => findings.filter((f) => f.severity !== 'error'), [findings])
+  const hasBlockingIssues = Boolean(geomError) || errorFindings.length > 0
+  const hasWarningsOnly = warningFindings.length > 0 && !hasBlockingIssues
+
+  function downloadStl(e: MouseEvent<HTMLButtonElement>) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!geometry || hasBlockingIssues) return
+    if (hasWarningsOnly) {
+      const ok = window.confirm(
+        'This configuration has printability warnings. Download STL anyway?',
+      )
+      if (!ok) return
+    }
+    const blob = geom3ToStlBlob(geometry)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.style.display = 'none'
+    a.href = url
+    a.download = `${template.id}.stl`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  function resetToDefaults() {
+    form.reset(mergeFormDefaults(template))
+  }
+
+  const processHelp = PROCESS_PRESETS.find((p) => p.id === processId)
+
+  /** Angle bracket: generator caps rows across width — show what actually gets meshed. */
+  const lBracketHoleRowInfo = useMemo(() => {
+    if (template.id !== 'l-bracket') return null
+    const requested = Math.max(1, Math.round(Number(watched.holeRows ?? 1)))
+    const w = Number(watched.width ?? 20)
+    const eo = Number(watched.edgeOffset ?? 6)
+    const minClr = Number(watched.minHoleEdgeClearance ?? 2)
+    const maxR = maxHoleRowsAlongWidth(w, effectiveHoleD, eo, minClr)
+    const effective = Math.max(1, Math.min(requested, maxR))
+    return { requested, effective, maxR }
+  }, [template.id, watched, effectiveHoleD])
+
   return (
     <div className="space-y-4" data-bracket-page={template.id}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -211,19 +272,27 @@ function BracketConfigurator({ template }: { template: BracketTemplate }) {
             <p className="mt-1 text-xs text-slate-500">Also known as: {template.alternativeNames}</p>
           ) : null}
           <p className="mt-1 text-xs text-slate-500">
-            v{template.version} · {template.units} · strategy{' '}
-            <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">{template.generationStrategy}</code>
+            v{template.version} · {template.units}
           </p>
         </div>
-        <button
-          type="button"
-          data-testid="download-stl"
-          onClick={downloadStl}
-          disabled={!geometry}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-slate-900"
-        >
-          Download STL
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={resetToDefaults}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-800 shadow-sm hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+          >
+            Reset defaults
+          </button>
+          <button
+            type="button"
+            data-testid="download-stl"
+            onClick={downloadStl}
+            disabled={!geometry || hasBlockingIssues}
+            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-slate-900"
+          >
+            Download STL
+          </button>
+        </div>
       </div>
 
       {toast ? (
@@ -244,9 +313,9 @@ function BracketConfigurator({ template }: { template: BracketTemplate }) {
         </p>
       ) : null}
 
-      {findings.length > 0 ? (
-        <ul className="space-y-1 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100">
-          {findings.map((f) => (
+      {errorFindings.length > 0 ? (
+        <ul className="space-y-1 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-100">
+          {errorFindings.map((f) => (
             <li key={f.code}>
               [{f.severity}] {f.message}
             </li>
@@ -254,69 +323,35 @@ function BracketConfigurator({ template }: { template: BracketTemplate }) {
         </ul>
       ) : null}
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,380px)] lg:items-start">
-        <div className="min-h-0 w-full">
+      {warningFindings.length > 0 ? (
+        <ul className="space-y-1 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100">
+          {warningFindings.map((f) => (
+            <li key={f.code}>
+              [{f.severity}] {f.message}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(280px,380px)] lg:items-start">
+        <div className="min-h-0 min-w-0 w-full">
           <PreviewViewport
             geometry={geometry}
             cameraPosition={template.preview.cameraPosition}
             target={template.preview.target}
-            className="h-[min(72vh,560px)] min-h-[420px] w-full max-lg:max-h-[min(70vh,520px)]"
+            className="h-[min(72vh,560px)] min-h-[280px] w-full max-lg:min-h-[240px] max-lg:max-h-[min(50vh,420px)] lg:min-h-[420px]"
           />
+          <p className="mt-1 text-center text-xs text-slate-500 dark:text-slate-400">
+            Drag on the preview to rotate. Scroll wheel does not zoom (by design).
+          </p>
         </div>
 
-        <aside className="flex min-h-0 w-full flex-col lg:sticky lg:top-4 lg:max-h-[min(85vh,720px)]">
+        <aside className="flex min-h-0 min-w-0 w-full max-w-full flex-col lg:sticky lg:top-4 lg:max-h-[min(85vh,720px)]">
           <form
             key={template.id}
             className="max-h-[min(85vh,720px)] space-y-2 overflow-y-auto overscroll-contain pr-1"
             onSubmit={(e) => e.preventDefault()}
           >
-          <AccordionPanel
-            title="Process preset (validation only)"
-            open={openSection === 'process'}
-            onToggle={() => toggleSection('process')}
-          >
-            <p className="text-xs text-slate-600 dark:text-slate-400">
-              This does <strong>not</strong> change the STL mesh. It tunes warnings (wall thickness, etc.) for
-              your manufacturing process.
-            </p>
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="font-medium text-slate-700 dark:text-slate-300">Preset</span>
-              <select
-                className="rounded-md border border-slate-300 bg-white px-3 py-2 dark:border-slate-600 dark:bg-slate-900"
-                {...form.register('processId')}
-              >
-                {PROCESS_PRESETS.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {processHelp ? (
-              <p className="text-xs text-slate-600 dark:text-slate-400">{processHelp.help}</p>
-            ) : null}
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-500 dark:text-slate-400">About all presets:</span>
-              <button
-                type="button"
-                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-                aria-label="Show process preset reference (all presets)"
-                title="Process preset reference"
-                onClick={() =>
-                  setToast(
-                    PROCESS_PRESETS.map((pr) => `${pr.label}\n${pr.help}\nNotes: ${pr.notes}`).join(
-                      '\n\n────────\n\n',
-                    ),
-                  )
-                }
-              >
-                <span className="text-sm font-semibold leading-none" aria-hidden>
-                  ⓘ
-                </span>
-              </button>
-            </div>
-          </AccordionPanel>
-
           {hasHoles ? (
             <AccordionPanel
               title="Bolt & clearance hole"
@@ -372,7 +407,17 @@ function BracketConfigurator({ template }: { template: BracketTemplate }) {
               onToggle={() => toggleSection(`group-${group}`)}
             >
               {params.map((p) => (
-                <ParameterField key={p.key} param={p} register={form.register} errors={form.formState.errors} />
+                <div key={p.key} className="space-y-1">
+                  <ParameterField param={p} register={form.register} errors={form.formState.errors} />
+                  {template.id === 'l-bracket' && p.key === 'holeRows' && lBracketHoleRowInfo ? (
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                      Effective hole rows used: <strong>{lBracketHoleRowInfo.effective}</strong>
+                      {lBracketHoleRowInfo.requested > lBracketHoleRowInfo.effective
+                        ? ` (you asked for ${lBracketHoleRowInfo.requested}; this width fits at most ${lBracketHoleRowInfo.maxR}).`
+                        : ` (at most ${lBracketHoleRowInfo.maxR} fit across this width).`}
+                    </p>
+                  ) : null}
+                </div>
               ))}
             </AccordionPanel>
           ))}
@@ -388,6 +433,53 @@ function BracketConfigurator({ template }: { template: BracketTemplate }) {
               ))}
             </AccordionPanel>
           ) : null}
+
+          <AccordionPanel
+            title="Process preset (validation only)"
+            open={openSection === 'process'}
+            onToggle={() => toggleSection('process')}
+          >
+            <p className="text-xs text-slate-600 dark:text-slate-400">
+              This does <strong>not</strong> change the STL mesh. It tunes warnings (wall thickness, etc.) for
+              your manufacturing process.
+            </p>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="font-medium text-slate-700 dark:text-slate-300">Preset</span>
+              <select
+                className="rounded-md border border-slate-300 bg-white px-3 py-2 dark:border-slate-600 dark:bg-slate-900"
+                {...form.register('processId')}
+              >
+                {PROCESS_PRESETS.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {processHelp ? (
+              <p className="text-xs text-slate-600 dark:text-slate-400">{processHelp.help}</p>
+            ) : null}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-500 dark:text-slate-400">About all presets:</span>
+              <button
+                type="button"
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                aria-label="Show process preset reference (all presets)"
+                title="Process preset reference"
+                onClick={() =>
+                  setToast(
+                    PROCESS_PRESETS.map((pr) => `${pr.label}\n${pr.help}\nNotes: ${pr.notes}`).join(
+                      '\n\n────────\n\n',
+                    ),
+                  )
+                }
+              >
+                <span className="text-sm font-semibold leading-none" aria-hidden>
+                  ⓘ
+                </span>
+              </button>
+            </div>
+          </AccordionPanel>
         </form>
         </aside>
       </div>
@@ -442,6 +534,7 @@ function ParameterField({
 
   const inputType = param.type === 'integer' ? 'number' : 'number'
   const step = param.step ?? (param.type === 'integer' ? 1 : 0.1)
+  const reservedOuterFillet = param.key === 'outerFilletRadius'
 
   return (
     <label className="flex flex-col gap-1 text-sm">
@@ -450,7 +543,15 @@ function ParameterField({
       <input
         type={inputType}
         step={step}
-        className="rounded-md border border-slate-300 bg-white px-3 py-2 dark:border-slate-600 dark:bg-slate-900"
+        min={param.min}
+        max={param.max}
+        disabled={reservedOuterFillet}
+        title={
+          reservedOuterFillet
+            ? 'Reserved for a future release; the mesh still uses sharp outer corners.'
+            : undefined
+        }
+        className={`rounded-md border border-slate-300 bg-white px-3 py-2 dark:border-slate-600 dark:bg-slate-900 ${reservedOuterFillet ? 'cursor-not-allowed opacity-60' : ''}`}
         {...register(param.key, {
           valueAsNumber: param.type === 'number' || param.type === 'integer',
         })}

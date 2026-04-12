@@ -180,7 +180,7 @@
     }
   ],
   "preview": {
-    "cameraPosition": [70, 70, 50],
-    "target": [30, 10, 2]
+    "cameraPosition": [30, 48, 44],
+    "target": [30, 10, 1.5]
   }
 }
