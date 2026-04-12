@@ -1,0 +1,143 @@
+{
+  "id": "gusseted-corner",
+  "name": "Gusseted Corner Bracket",
+  "description": "Angle bracket with vertical gusset strips for extra stiffness.",
+  "category": "angle",
+  "version": "1.0.0",
+  "generationStrategy": "gussetedCorner",
+  "units": "mm",
+  "parameters": [
+    {
+      "key": "leg1Length",
+      "label": "Leg 1 length",
+      "type": "number",
+      "default": 45,
+      "min": 15,
+      "max": 200,
+      "step": 0.5,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "leg2Length",
+      "label": "Leg 2 length",
+      "type": "number",
+      "default": 45,
+      "min": 15,
+      "max": 200,
+      "step": 0.5,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "width",
+      "label": "Width",
+      "type": "number",
+      "default": 24,
+      "min": 10,
+      "max": 80,
+      "step": 0.5,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "thickness",
+      "label": "Plate thickness",
+      "type": "number",
+      "default": 3,
+      "min": 1.6,
+      "max": 10,
+      "step": 0.1,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "gussetHeight",
+      "label": "Gusset height",
+      "type": "number",
+      "default": 12,
+      "min": 4,
+      "max": 60,
+      "step": 0.5,
+      "group": "reinforcement",
+      "unit": "mm"
+    },
+    {
+      "key": "gussetThickness",
+      "label": "Gusset thickness",
+      "type": "number",
+      "default": 2,
+      "min": 1,
+      "max": 6,
+      "step": 0.1,
+      "group": "reinforcement",
+      "unit": "mm"
+    },
+    {
+      "key": "gussetCount",
+      "label": "Gusset count",
+      "type": "integer",
+      "default": 2,
+      "min": 1,
+      "max": 4,
+      "step": 1,
+      "group": "reinforcement"
+    },
+    {
+      "key": "holeDiameter",
+      "label": "Hole diameter",
+      "type": "number",
+      "default": 4.5,
+      "min": 2,
+      "max": 12,
+      "step": 0.1,
+      "group": "hardware",
+      "unit": "mm"
+    },
+    {
+      "key": "holeCountLeg1",
+      "label": "Holes on leg 1",
+      "type": "integer",
+      "default": 2,
+      "min": 0,
+      "max": 8,
+      "group": "hardware"
+    },
+    {
+      "key": "holeCountLeg2",
+      "label": "Holes on leg 2",
+      "type": "integer",
+      "default": 2,
+      "min": 0,
+      "max": 8,
+      "group": "hardware"
+    },
+    {
+      "key": "edgeOffset",
+      "label": "Hole edge offset",
+      "type": "number",
+      "default": 6,
+      "min": 2,
+      "max": 40,
+      "step": 0.5,
+      "group": "hardware",
+      "unit": "mm"
+    },
+    {
+      "key": "xyHoleCompensation",
+      "label": "XY hole compensation",
+      "type": "number",
+      "default": 0.1,
+      "min": 0,
+      "max": 0.5,
+      "step": 0.02,
+      "group": "fit",
+      "unit": "mm",
+      "advanced": true
+    }
+  ],
+  "preview": {
+    "cameraPosition": [90, 70, 70],
+    "target": [20, 12, 18]
+  }
+}

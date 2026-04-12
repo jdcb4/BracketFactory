@@ -1,0 +1,113 @@
+{
+  "id": "u-channel",
+  "name": "U-Channel Bracket",
+  "description": "Channel section with a base and two flanges for mounting along an edge or rail.",
+  "category": "channel",
+  "version": "1.0.0",
+  "generationStrategy": "uChannel",
+  "units": "mm",
+  "parameters": [
+    {
+      "key": "baseWidth",
+      "label": "Base width (inside span + flanges)",
+      "type": "number",
+      "default": 40,
+      "min": 20,
+      "max": 120,
+      "step": 0.5,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "leftFlangeHeight",
+      "label": "Left flange height",
+      "type": "number",
+      "default": 20,
+      "min": 8,
+      "max": 80,
+      "step": 0.5,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "rightFlangeHeight",
+      "label": "Right flange height",
+      "type": "number",
+      "default": 20,
+      "min": 8,
+      "max": 80,
+      "step": 0.5,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "thickness",
+      "label": "Wall thickness",
+      "type": "number",
+      "default": 3,
+      "min": 1.6,
+      "max": 8,
+      "step": 0.1,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "length",
+      "label": "Length (extrusion direction)",
+      "type": "number",
+      "default": 50,
+      "min": 20,
+      "max": 200,
+      "step": 0.5,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "holeDiameter",
+      "label": "Hole diameter",
+      "type": "number",
+      "default": 4.5,
+      "min": 2,
+      "max": 12,
+      "step": 0.1,
+      "group": "hardware",
+      "unit": "mm"
+    },
+    {
+      "key": "holesPerFlange",
+      "label": "Holes per flange",
+      "type": "integer",
+      "default": 2,
+      "min": 1,
+      "max": 8,
+      "group": "hardware"
+    },
+    {
+      "key": "edgeOffset",
+      "label": "End offset for holes",
+      "type": "number",
+      "default": 8,
+      "min": 2,
+      "max": 40,
+      "step": 0.5,
+      "group": "hardware",
+      "unit": "mm"
+    },
+    {
+      "key": "xyHoleCompensation",
+      "label": "XY hole compensation",
+      "type": "number",
+      "default": 0.1,
+      "min": 0,
+      "max": 0.5,
+      "step": 0.02,
+      "group": "fit",
+      "unit": "mm",
+      "advanced": true
+    }
+  ],
+  "preview": {
+    "cameraPosition": [80, 60, 50],
+    "target": [25, 20, 15]
+  }
+}

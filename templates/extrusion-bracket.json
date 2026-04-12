@@ -1,0 +1,103 @@
+{
+  "id": "extrusion-bracket",
+  "name": "Extrusion Bracket (2020 / 3030 / 4040)",
+  "description": "Simplified bracket for common aluminum extrusion profiles with slot clearance.",
+  "category": "extrusion",
+  "version": "1.0.0",
+  "generationStrategy": "extrusionBracket",
+  "units": "mm",
+  "parameters": [
+    {
+      "key": "profile",
+      "label": "Profile",
+      "type": "select",
+      "default": "2020",
+      "group": "dimensions",
+      "options": [
+        { "value": "2020", "label": "2020" },
+        { "value": "3030", "label": "3030" },
+        { "value": "4040", "label": "4040" }
+      ]
+    },
+    {
+      "key": "armLength",
+      "label": "Arm length",
+      "type": "number",
+      "default": 40,
+      "min": 20,
+      "max": 120,
+      "step": 0.5,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "thickness",
+      "label": "Body thickness",
+      "type": "number",
+      "default": 4,
+      "min": 2,
+      "max": 10,
+      "step": 0.1,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "ridgeClearance",
+      "label": "Slot clearance add-on",
+      "type": "number",
+      "default": 0.2,
+      "min": 0,
+      "max": 1,
+      "step": 0.05,
+      "group": "fit",
+      "unit": "mm"
+    },
+    {
+      "key": "holeDiameter",
+      "label": "Mounting hole diameter",
+      "type": "number",
+      "default": 4.5,
+      "min": 2,
+      "max": 12,
+      "step": 0.1,
+      "group": "hardware",
+      "unit": "mm"
+    },
+    {
+      "key": "holeCount",
+      "label": "Hole count on arm",
+      "type": "integer",
+      "default": 2,
+      "min": 1,
+      "max": 8,
+      "group": "hardware"
+    },
+    {
+      "key": "edgeOffset",
+      "label": "End offset",
+      "type": "number",
+      "default": 8,
+      "min": 2,
+      "max": 40,
+      "step": 0.5,
+      "group": "hardware",
+      "unit": "mm"
+    },
+    {
+      "key": "xyHoleCompensation",
+      "label": "XY hole compensation",
+      "type": "number",
+      "default": 0.1,
+      "min": 0,
+      "max": 0.5,
+      "step": 0.02,
+      "group": "fit",
+      "unit": "mm",
+      "advanced": true
+    }
+  ],
+  "preview": {
+    "cameraPosition": [90, 70, 60],
+    "target": [25, 15, 20]
+  }
+}

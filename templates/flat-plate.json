@@ -1,0 +1,133 @@
+{
+  "id": "flat-plate",
+  "name": "Flat Bracket / Mending Plate",
+  "description": "Flat plate with a regular grid of through-holes for mending or joining.",
+  "category": "flat",
+  "version": "1.0.0",
+  "generationStrategy": "flatPlate",
+  "units": "mm",
+  "parameters": [
+    {
+      "key": "length",
+      "label": "Length",
+      "type": "number",
+      "default": 60,
+      "min": 20,
+      "max": 200,
+      "step": 0.5,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "width",
+      "label": "Width",
+      "type": "number",
+      "default": 20,
+      "min": 10,
+      "max": 100,
+      "step": 0.5,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "thickness",
+      "label": "Thickness",
+      "type": "number",
+      "default": 3,
+      "min": 1.6,
+      "max": 10,
+      "step": 0.1,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "holeRows",
+      "label": "Hole rows (along length)",
+      "type": "integer",
+      "default": 2,
+      "min": 1,
+      "max": 10,
+      "group": "hardware"
+    },
+    {
+      "key": "holeCols",
+      "label": "Hole columns (along width)",
+      "type": "integer",
+      "default": 2,
+      "min": 1,
+      "max": 10,
+      "group": "hardware"
+    },
+    {
+      "key": "holeDiameter",
+      "label": "Hole diameter",
+      "type": "number",
+      "default": 4.5,
+      "min": 2,
+      "max": 12,
+      "step": 0.1,
+      "group": "hardware",
+      "unit": "mm"
+    },
+    {
+      "key": "holeSpacingX",
+      "label": "Hole spacing X (0 = auto)",
+      "type": "number",
+      "default": 0,
+      "min": 0,
+      "max": 100,
+      "step": 0.5,
+      "group": "hardware",
+      "unit": "mm"
+    },
+    {
+      "key": "holeSpacingY",
+      "label": "Hole spacing Y (0 = auto)",
+      "type": "number",
+      "default": 0,
+      "min": 0,
+      "max": 100,
+      "step": 0.5,
+      "group": "hardware",
+      "unit": "mm"
+    },
+    {
+      "key": "edgeOffsetX",
+      "label": "Edge offset X",
+      "type": "number",
+      "default": 8,
+      "min": 2,
+      "max": 50,
+      "step": 0.5,
+      "group": "hardware",
+      "unit": "mm"
+    },
+    {
+      "key": "edgeOffsetY",
+      "label": "Edge offset Y",
+      "type": "number",
+      "default": 6,
+      "min": 2,
+      "max": 50,
+      "step": 0.5,
+      "group": "hardware",
+      "unit": "mm"
+    },
+    {
+      "key": "xyHoleCompensation",
+      "label": "XY hole compensation",
+      "type": "number",
+      "default": 0.1,
+      "min": 0,
+      "max": 0.5,
+      "step": 0.02,
+      "group": "fit",
+      "unit": "mm",
+      "advanced": true
+    }
+  ],
+  "preview": {
+    "cameraPosition": [70, 70, 50],
+    "target": [30, 10, 2]
+  }
+}
