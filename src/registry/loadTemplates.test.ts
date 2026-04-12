@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { getTemplateById, loadAllTemplates } from './loadTemplates'
 
 describe('loadTemplates', () => {
-  it('loads MVP templates from build-time glob', () => {
+  it('loads MVP templates from build-time glob (excludes JSON Schema file)', () => {
     const all = loadAllTemplates()
-    expect(all.length).toBeGreaterThanOrEqual(5)
+    expect(all.length).toBe(4)
+    expect(all.some((t) => t.template.id === '_schema')).toBe(false)
   })
 
   it('finds l-bracket by id', () => {

@@ -19,7 +19,9 @@ export function loadAllTemplates(): LoadedTemplate[] {
   for (const path of Object.keys(rawModules)) {
     const mod = rawModules[path]
     const template = mod.default
-    if (template.id === '_schema') continue
+    // `_schema.json` is JSON Schema, not a bracket template (no strategy / parameters).
+    if (path.includes('_schema')) continue
+    if (!template?.generationStrategy || !Array.isArray(template.parameters)) continue
     out.push({ path, template })
   }
   return out.sort((a, b) => a.template.name.localeCompare(b.template.name))

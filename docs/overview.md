@@ -4,7 +4,7 @@ BracketFactory is a static, client-only web app for generating parametric, 3D-pr
 
 ## MVP scope
 
-- Catalog of MVP bracket families (L-bracket, gusseted corner, flat plate, U-channel, extrusion).
+- Catalog of MVP bracket families: **angle bracket** (optional inner gussets), mending plate, U-channel, extrusion bracket.
 - Per-template parameters, validation hints, and printability warnings.
 - Live preview and STL download (same geometry for both).
 

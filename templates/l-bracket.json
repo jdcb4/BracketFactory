@@ -1,15 +1,18 @@
 {
   "id": "l-bracket",
-  "name": "L-Bracket / Angle Bracket",
-  "description": "General-purpose angle bracket with two perpendicular legs, configurable holes and bend radii.",
+  "name": "Angle bracket",
+  "alternativeNames": "L-bracket, corner bracket, gusseted angle",
+  "description": "Perpendicular legs with optional inner-corner gussets and through-holes. Rests flat on the bottom face for printing.",
+  "thumbnail": "thumbnails/l-bracket.png",
   "category": "angle",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "generationStrategy": "lBracket",
   "units": "mm",
   "parameters": [
     {
       "key": "leg1Length",
       "label": "Leg 1 length",
+      "description": "Length of the horizontal leg (along X), measured along the outer flat.",
       "type": "number",
       "default": 40,
       "min": 12,
@@ -21,6 +24,7 @@
     {
       "key": "leg2Length",
       "label": "Leg 2 length",
+      "description": "Length of the vertical leg (along Z after the bend).",
       "type": "number",
       "default": 40,
       "min": 12,
@@ -32,6 +36,7 @@
     {
       "key": "width",
       "label": "Width (plate depth)",
+      "description": "Depth of both legs in Y — how wide the bracket is when viewed from above.",
       "type": "number",
       "default": 20,
       "min": 8,
@@ -43,6 +48,7 @@
     {
       "key": "thickness",
       "label": "Plate thickness",
+      "description": "Wall thickness of both legs (and minimum feature size for FDM).",
       "type": "number",
       "default": 3,
       "min": 1.6,
@@ -54,6 +60,7 @@
     {
       "key": "innerBendRadius",
       "label": "Inner bend radius",
+      "description": "Relief cut inside the corner so the bend is not perfectly sharp.",
       "type": "number",
       "default": 1,
       "min": 0,
@@ -63,23 +70,68 @@
       "unit": "mm"
     },
     {
+      "key": "gusseted",
+      "label": "Gusseted inner corner",
+      "description": "Adds triangular gusset plates in the inside corner for stiffness.",
+      "type": "boolean",
+      "default": false,
+      "group": "reinforcement"
+    },
+    {
+      "key": "gussetHeight",
+      "label": "Gusset height",
+      "description": "How far each gusset extends along the inner faces from the bend.",
+      "type": "number",
+      "default": 12,
+      "min": 4,
+      "max": 60,
+      "step": 0.5,
+      "group": "reinforcement",
+      "unit": "mm"
+    },
+    {
+      "key": "gussetThickness",
+      "label": "Gusset thickness",
+      "description": "Gusset extent across the bracket width (Y), centered on each gusset’s mid-plane so changing thickness grows equally to both sides.",
+      "type": "number",
+      "default": 2,
+      "min": 1,
+      "max": 6,
+      "step": 0.1,
+      "group": "reinforcement",
+      "unit": "mm"
+    },
+    {
+      "key": "gussetCount",
+      "label": "Gusset count",
+      "description": "Number of gusset plates along Y (1–4).",
+      "type": "integer",
+      "default": 2,
+      "min": 1,
+      "max": 4,
+      "group": "reinforcement"
+    },
+    {
       "key": "outerFilletRadius",
       "label": "Outer corner fillet",
+      "description": "Reserved for future outer-corner rounding (currently does not change mesh).",
       "type": "number",
       "default": 0,
       "min": 0,
       "max": 8,
       "step": 0.1,
       "group": "reinforcement",
-      "unit": "mm"
+      "unit": "mm",
+      "advanced": true
     },
     {
       "key": "holeDiameter",
       "label": "Hole diameter",
+      "description": "Used when \"Custom\" bolt size is selected in the mounting section.",
       "type": "number",
-      "default": 4.5,
+      "default": 5.3,
       "min": 2,
-      "max": 12,
+      "max": 20,
       "step": 0.1,
       "group": "hardware",
       "unit": "mm"
@@ -87,26 +139,37 @@
     {
       "key": "holeCountLeg1",
       "label": "Holes on leg 1",
+      "description": "Through-holes on the horizontal leg (along Z axis). Evenly spaced between edge offsets.",
       "type": "integer",
       "default": 2,
       "min": 0,
       "max": 8,
-      "step": 1,
       "group": "hardware"
     },
     {
       "key": "holeCountLeg2",
       "label": "Holes on leg 2",
+      "description": "Through-holes on the vertical leg (along X). Evenly spaced between edge offsets.",
       "type": "integer",
       "default": 2,
       "min": 0,
       "max": 8,
-      "step": 1,
+      "group": "hardware"
+    },
+    {
+      "key": "holeRows",
+      "label": "Hole rows (width)",
+      "description": "Parallel rows of holes across the bracket width (Y). The generator caps this from width, hole diameter, and minimum hole-to-edge clearance so rows stay separated. Gussets are placed only in gaps between rows so they cannot cover mounting holes.",
+      "type": "integer",
+      "default": 1,
+      "min": 1,
+      "max": 8,
       "group": "hardware"
     },
     {
       "key": "edgeOffset",
       "label": "Hole edge offset",
+      "description": "Minimum distance from each leg end toward the first/last hole center (before edge clamping).",
       "type": "number",
       "default": 6,
       "min": 2,
@@ -116,8 +179,49 @@
       "unit": "mm"
     },
     {
+      "key": "countersunkHoles",
+      "label": "Countersunk holes",
+      "description": "Conical recess for flat-head screws on the outside of each leg only (horizontal leg: +Z face; vertical leg: +X outside). Countersink angle follows bolt preset (90° metric, 82° UNC); opening diameter and depth are limited for 3D-printed walls.",
+      "type": "boolean",
+      "default": false,
+      "group": "hardware"
+    },
+    {
+      "key": "slottedHoles",
+      "label": "Slotted holes",
+      "description": "Elongate holes along the spacing direction on each leg for easier alignment.",
+      "type": "boolean",
+      "default": false,
+      "group": "hardware"
+    },
+    {
+      "key": "slotOversizeMm",
+      "label": "Extra slot length",
+      "description": "Added length (mm) along the slot direction beyond the bolt clearance diameter.",
+      "type": "number",
+      "default": 2,
+      "min": 0.5,
+      "max": 15,
+      "step": 0.5,
+      "group": "hardware",
+      "unit": "mm"
+    },
+    {
+      "key": "minHoleEdgeClearance",
+      "label": "Minimum hole-to-edge",
+      "description": "Keeps hole centers away from stock edges so holes cannot break out (mm).",
+      "type": "number",
+      "default": 2,
+      "min": 0.5,
+      "max": 10,
+      "step": 0.5,
+      "group": "fit",
+      "unit": "mm"
+    },
+    {
       "key": "xyHoleCompensation",
       "label": "XY hole compensation",
+      "description": "Extra radius on holes for printer tolerance (subtract from nominal).",
       "type": "number",
       "default": 0.1,
       "min": 0,

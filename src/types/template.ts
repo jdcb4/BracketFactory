@@ -20,6 +20,8 @@ export interface SelectOption {
 export interface TemplateParameter {
   readonly key: string
   readonly label: string
+  /** Shown under the label — what changing this value does. */
+  readonly description?: string
   readonly type: ParameterType
   readonly default: string | number | boolean
   readonly min?: number
@@ -41,6 +43,10 @@ export interface BracketTemplate {
   readonly id: string
   readonly name: string
   readonly description: string
+  /** Optional alternative names for search / subtitle (not shown as main title). */
+  readonly alternativeNames?: string
+  /** Path under `public/` for catalog thumbnail, e.g. `thumbnails/l-bracket.svg`. */
+  readonly thumbnail?: string
   readonly category: string
   readonly version: string
   readonly generationStrategy: string

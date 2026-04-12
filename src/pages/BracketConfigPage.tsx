@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import type Geom3 from '@jscad/modeling/src/geometries/geom3/type'
 import { Link, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
@@ -10,6 +10,7 @@ import { defaultParamsFromTemplate } from '../utils/params'
 import { runBracketChecks } from '../validation/bracketChecks'
 import type { ProcessId } from '../data/processes'
 import { PROCESS_PRESETS } from '../data/processes'
+import { MOUNTING_BOLT_SELECT_OPTIONS, resolveClearanceHoleDiameterMm } from '../data/mountingHardware'
 import type { BracketTemplate, ParameterGroup } from '../types/template'
 
 const GROUP_ORDER: ParameterGroup[] = [
@@ -28,6 +29,15 @@ const GROUP_LABEL: Record<ParameterGroup, string> = {
   fit: 'Fit & tolerances',
   print: 'Printer & material',
   advanced: 'Advanced',
+}
+
+/** UI-only fields merged with template defaults (not in every JSON file). */
+function mergeFormDefaults(template: BracketTemplate): Record<string, unknown> {
+  return {
+    ...defaultParamsFromTemplate(template),
+    processId: 'fdm_pla_abs' as ProcessId,
+    mountingBolt: 'M5',
+  }
 }
 
 /**
@@ -67,15 +77,43 @@ export function BracketConfigPage() {
   return <BracketConfigurator key={template.id} template={template} />
 }
 
-function BracketConfigurator({ template }: { template: BracketTemplate }) {
-  const defaults = useMemo(
-    () => ({
-      ...defaultParamsFromTemplate(template),
-      processId: 'fdm_pla_abs' as ProcessId,
-      showAdvanced: false,
-    }),
-    [template],
+/** One accordion section: only one should be open at a time (parent controls `open`). */
+function AccordionPanel({
+  title,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string
+  open: boolean
+  onToggle: () => void
+  children: ReactNode
+}) {
+  return (
+    <div className="rounded-lg border border-slate-200 dark:border-slate-800">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm font-medium text-slate-800 dark:text-slate-200"
+      >
+        {title}
+        <span
+          className={`text-xs font-normal text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`}
+          aria-hidden
+        >
+          ▼
+        </span>
+      </button>
+      {open ? (
+        <div className="space-y-3 border-t border-slate-100 px-3 pb-3 pt-2 dark:border-slate-800">{children}</div>
+      ) : null}
+    </div>
   )
+}
+
+function BracketConfigurator({ template }: { template: BracketTemplate }) {
+  const defaults = useMemo(() => mergeFormDefaults(template), [template])
 
   const form = useForm<Record<string, unknown>>({
     defaultValues: defaults,
@@ -84,13 +122,11 @@ function BracketConfigurator({ template }: { template: BracketTemplate }) {
   /* eslint-disable-next-line react-hooks/incompatible-library -- RHF watch drives live preview */
   const watched = form.watch() as Record<string, unknown>
 
-  // Pure memo: never call setState here (that caused React #301 in production).
   const { geometry, geomError } = useMemo((): { geometry: Geom3 | null; geomError: string | null } => {
     if (!template.generationStrategy || template.disabled) return { geometry: null, geomError: null }
     try {
       const params: ParamRecord = { ...watched } as ParamRecord
       delete (params as Record<string, unknown>).processId
-      delete (params as Record<string, unknown>).showAdvanced
       return { geometry: generateFromStrategy(template.generationStrategy, params), geomError: null }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
@@ -100,20 +136,22 @@ function BracketConfigurator({ template }: { template: BracketTemplate }) {
 
   const processId = (watched['processId'] ?? 'fdm_pla_abs') as ProcessId
   const thickness = Number(watched['thickness'] ?? 3)
+  const mountingBolt = String(watched['mountingBolt'] ?? 'M5')
+  const customHole = Number(watched['holeDiameter'] ?? 4.5)
+  const effectiveHoleD = resolveClearanceHoleDiameterMm(mountingBolt, customHole)
 
   const findings = useMemo(() => {
-    const hd = Number(watched['holeDiameter'] ?? 0)
     const eo = Number(watched['edgeOffset'] ?? 0)
     return runBracketChecks({
       processId,
       wallThicknessMm: thickness,
       bridgeSpanMm: undefined,
-      holeDiameterMm: hd || undefined,
+      holeDiameterMm: effectiveHoleD || undefined,
       holeEdgeDistanceMm: eo || undefined,
       flangeLengthMm:
         Number(watched['leftFlangeHeight'] ?? watched['leg1Length'] ?? 0) || undefined,
     })
-  }, [watched, processId, thickness])
+  }, [watched, processId, thickness, effectiveHoleD])
 
   function downloadStl() {
     if (!geometry) return
@@ -126,11 +164,39 @@ function BracketConfigurator({ template }: { template: BracketTemplate }) {
     URL.revokeObjectURL(url)
   }
 
-  const showAdvanced = Boolean(watched['showAdvanced'])
+  const processHelp = PROCESS_PRESETS.find((p) => p.id === processId)
+
+  const visibleParams = useMemo(() => {
+    let list = template.parameters
+    const gusseted = watched['gusseted'] === true
+    const slotted = watched['slottedHoles'] === true
+    if (template.id === 'l-bracket' && !gusseted) {
+      list = list.filter((p) => !['gussetHeight', 'gussetThickness', 'gussetCount'].includes(p.key))
+    }
+    if (!slotted) {
+      list = list.filter((p) => p.key !== 'slotOversizeMm')
+    }
+    return list
+  }, [template, watched])
+
+  const hasHoles = visibleParams.some((p) => p.key === 'holeDiameter')
+
+  const paramsSansHole = visibleParams.filter((p) => p.key !== 'holeDiameter')
+
   const paramsByGroup = GROUP_ORDER.map((g) => ({
     group: g,
-    params: template.parameters.filter((p) => p.group === g && (!p.advanced || showAdvanced)),
+    params: paramsSansHole.filter((p) => p.group === g && !p.advanced),
   })).filter((x) => x.params.length > 0)
+
+  const advancedParams = paramsSansHole.filter((p) => p.advanced)
+
+  const [toast, setToast] = useState<string | null>(null)
+
+  /** Exclusive accordion: opening one section closes another; click again to collapse. */
+  const [openSection, setOpenSection] = useState<string | null>('process')
+  function toggleSection(id: string) {
+    setOpenSection((prev) => (prev === id ? null : id))
+  }
 
   return (
     <div className="space-y-4" data-bracket-page={template.id}>
@@ -141,6 +207,9 @@ function BracketConfigurator({ template }: { template: BracketTemplate }) {
           </Link>
           <h1 className="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">{template.name}</h1>
           <p className="mt-1 max-w-3xl text-slate-600 dark:text-slate-400">{template.description}</p>
+          {template.alternativeNames ? (
+            <p className="mt-1 text-xs text-slate-500">Also known as: {template.alternativeNames}</p>
+          ) : null}
           <p className="mt-1 text-xs text-slate-500">
             v{template.version} · {template.units} · strategy{' '}
             <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">{template.generationStrategy}</code>
@@ -156,6 +225,18 @@ function BracketConfigurator({ template }: { template: BracketTemplate }) {
           Download STL
         </button>
       </div>
+
+      {toast ? (
+        <div
+          role="status"
+          className="fixed bottom-6 right-6 z-50 max-h-[min(70vh,520px)] max-w-md overflow-y-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-white px-4 py-3 text-xs text-slate-800 shadow-lg dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+        >
+          {toast}
+          <button type="button" className="ml-2 text-slate-500 underline" onClick={() => setToast(null)}>
+            Dismiss
+          </button>
+        </div>
+      ) : null}
 
       {geomError ? (
         <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
@@ -173,45 +254,142 @@ function BracketConfigurator({ template }: { template: BracketTemplate }) {
         </ul>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <PreviewViewport
-          geometry={geometry}
-          cameraPosition={template.preview.cameraPosition}
-          target={template.preview.target}
-          className="min-h-[420px] lg:min-h-[520px]"
-        />
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,380px)] lg:items-start">
+        <div className="min-h-0 w-full">
+          <PreviewViewport
+            geometry={geometry}
+            cameraPosition={template.preview.cameraPosition}
+            target={template.preview.target}
+            className="h-[min(72vh,560px)] min-h-[420px] w-full max-lg:max-h-[min(70vh,520px)]"
+          />
+        </div>
 
-        <form key={template.id} className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium text-slate-700 dark:text-slate-300">Process preset</span>
-            <select
-              className="rounded-md border border-slate-300 bg-white px-3 py-2 dark:border-slate-600 dark:bg-slate-900"
-              {...form.register('processId')}
+        <aside className="flex min-h-0 w-full flex-col lg:sticky lg:top-4 lg:max-h-[min(85vh,720px)]">
+          <form
+            key={template.id}
+            className="max-h-[min(85vh,720px)] space-y-2 overflow-y-auto overscroll-contain pr-1"
+            onSubmit={(e) => e.preventDefault()}
+          >
+          <AccordionPanel
+            title="Process preset (validation only)"
+            open={openSection === 'process'}
+            onToggle={() => toggleSection('process')}
+          >
+            <p className="text-xs text-slate-600 dark:text-slate-400">
+              This does <strong>not</strong> change the STL mesh. It tunes warnings (wall thickness, etc.) for
+              your manufacturing process.
+            </p>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="font-medium text-slate-700 dark:text-slate-300">Preset</span>
+              <select
+                className="rounded-md border border-slate-300 bg-white px-3 py-2 dark:border-slate-600 dark:bg-slate-900"
+                {...form.register('processId')}
+              >
+                {PROCESS_PRESETS.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {processHelp ? (
+              <p className="text-xs text-slate-600 dark:text-slate-400">{processHelp.help}</p>
+            ) : null}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-500 dark:text-slate-400">About all presets:</span>
+              <button
+                type="button"
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                aria-label="Show process preset reference (all presets)"
+                title="Process preset reference"
+                onClick={() =>
+                  setToast(
+                    PROCESS_PRESETS.map((pr) => `${pr.label}\n${pr.help}\nNotes: ${pr.notes}`).join(
+                      '\n\n────────\n\n',
+                    ),
+                  )
+                }
+              >
+                <span className="text-sm font-semibold leading-none" aria-hidden>
+                  ⓘ
+                </span>
+              </button>
+            </div>
+          </AccordionPanel>
+
+          {hasHoles ? (
+            <AccordionPanel
+              title="Bolt & clearance hole"
+              open={openSection === 'bolt'}
+              onToggle={() => toggleSection('bolt')}
             >
-              {PROCESS_PRESETS.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" {...form.register('showAdvanced')} />
-            <span>Show advanced parameters</span>
-          </label>
+              <label className="flex flex-col gap-1 text-sm">
+                <span className="font-medium text-slate-700 dark:text-slate-300">Bolt / screw size</span>
+                <span className="text-xs text-slate-500">
+                  Picks a typical clearance hole diameter. Choose Custom to type an exact mm value.
+                </span>
+                <select
+                  className="rounded-md border border-slate-300 bg-white px-3 py-2 dark:border-slate-600 dark:bg-slate-900"
+                  {...form.register('mountingBolt')}
+                >
+                  {MOUNTING_BOLT_SELECT_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {mountingBolt === 'custom' ? (
+                <ParameterField
+                  param={{
+                    key: 'holeDiameter',
+                    label: 'Custom hole diameter',
+                    description: 'Through-hole diameter in mm when not using a preset.',
+                    type: 'number',
+                    default: 4.5,
+                    min: 2,
+                    max: 20,
+                    step: 0.1,
+                    group: 'hardware',
+                    unit: 'mm',
+                  }}
+                  register={form.register}
+                  errors={form.formState.errors}
+                />
+              ) : (
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  Effective hole diameter: <strong>{effectiveHoleD.toFixed(2)} mm</strong> (clearance for {mountingBolt})
+                </p>
+              )}
+            </AccordionPanel>
+          ) : null}
 
           {paramsByGroup.map(({ group, params }) => (
-            <fieldset key={group} className="space-y-3 rounded-lg border border-slate-200 p-3 dark:border-slate-800">
-              <legend className="px-1 text-sm font-medium text-slate-800 dark:text-slate-200">
-                {GROUP_LABEL[group]}
-              </legend>
+            <AccordionPanel
+              key={group}
+              title={GROUP_LABEL[group]}
+              open={openSection === `group-${group}`}
+              onToggle={() => toggleSection(`group-${group}`)}
+            >
               {params.map((p) => (
                 <ParameterField key={p.key} param={p} register={form.register} errors={form.formState.errors} />
               ))}
-            </fieldset>
+            </AccordionPanel>
           ))}
+
+          {advancedParams.length > 0 ? (
+            <AccordionPanel
+              title="Advanced & fine tuning"
+              open={openSection === 'advanced'}
+              onToggle={() => toggleSection('advanced')}
+            >
+              {advancedParams.map((p) => (
+                <ParameterField key={p.key} param={p} register={form.register} errors={form.formState.errors} />
+              ))}
+            </AccordionPanel>
+          ) : null}
         </form>
+        </aside>
       </div>
     </div>
   )
@@ -231,7 +409,11 @@ function ParameterField({
     return (
       <label className="flex flex-col gap-1 text-sm">
         <span className="text-slate-700 dark:text-slate-300">{param.label}</span>
-        <select className="rounded-md border border-slate-300 bg-white px-3 py-2 dark:border-slate-600 dark:bg-slate-900" {...register(param.key)}>
+        {param.description ? <span className="text-xs text-slate-500">{param.description}</span> : null}
+        <select
+          className="rounded-md border border-slate-300 bg-white px-3 py-2 dark:border-slate-600 dark:bg-slate-900"
+          {...register(param.key)}
+        >
           {param.options.map((o) => (
             <option key={o.value} value={o.value}>
               {o.label}
@@ -244,12 +426,27 @@ function ParameterField({
     )
   }
 
+  if (param.type === 'boolean') {
+    return (
+      <label className="flex items-start gap-2 text-sm">
+        <input type="checkbox" className="mt-1" {...register(param.key)} />
+        <span>
+          <span className="font-medium text-slate-700 dark:text-slate-300">{param.label}</span>
+          {param.description ? (
+            <span className="mt-0.5 block text-xs text-slate-500">{param.description}</span>
+          ) : null}
+        </span>
+      </label>
+    )
+  }
+
   const inputType = param.type === 'integer' ? 'number' : 'number'
   const step = param.step ?? (param.type === 'integer' ? 1 : 0.1)
 
   return (
     <label className="flex flex-col gap-1 text-sm">
       <span className="text-slate-700 dark:text-slate-300">{param.label}</span>
+      {param.description ? <span className="text-xs text-slate-500">{param.description}</span> : null}
       <input
         type={inputType}
         step={step}
@@ -260,9 +457,7 @@ function ParameterField({
       />
       <span className="text-xs text-slate-500">
         {param.unit ? `${param.unit}` : ''}
-        {param.min !== undefined && param.max !== undefined
-          ? ` · ${param.min}–${param.max}`
-          : ''}
+        {param.min !== undefined && param.max !== undefined ? ` · ${param.min}–${param.max}` : ''}
       </span>
       {err ? <span className="text-xs text-red-600">{String(err)}</span> : null}
     </label>

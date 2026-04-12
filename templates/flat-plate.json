@@ -1,15 +1,18 @@
 {
   "id": "flat-plate",
-  "name": "Flat Bracket / Mending Plate",
-  "description": "Flat plate with a regular grid of through-holes for mending or joining.",
+  "name": "Mending plate",
+  "alternativeNames": "Flat bracket, splice plate",
+  "description": "Flat plate with a regular grid of through-holes. Lies flat on the bed (large face down).",
+  "thumbnail": "thumbnails/flat-plate.png",
   "category": "flat",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "generationStrategy": "flatPlate",
   "units": "mm",
   "parameters": [
     {
       "key": "length",
       "label": "Length",
+      "description": "Plate size along X.",
       "type": "number",
       "default": 60,
       "min": 20,
@@ -21,6 +24,7 @@
     {
       "key": "width",
       "label": "Width",
+      "description": "Plate size along Y.",
       "type": "number",
       "default": 20,
       "min": 10,
@@ -32,6 +36,7 @@
     {
       "key": "thickness",
       "label": "Thickness",
+      "description": "Plate thickness (Z); this face prints on the bed.",
       "type": "number",
       "default": 3,
       "min": 1.6,
@@ -41,8 +46,9 @@
       "unit": "mm"
     },
     {
-      "key": "holeRows",
-      "label": "Hole rows (along length)",
+      "key": "holesAlongLength",
+      "label": "Holes along length (X)",
+      "description": "Number of hole positions along the length direction. The generator caps this from plate length, hole diameter, and edge offsets so rows stay separated.",
       "type": "integer",
       "default": 2,
       "min": 1,
@@ -50,8 +56,9 @@
       "group": "hardware"
     },
     {
-      "key": "holeCols",
-      "label": "Hole columns (along width)",
+      "key": "holesAlongWidth",
+      "label": "Holes along width (Y)",
+      "description": "Number of hole positions along the width direction. The generator caps this from plate width, hole diameter, and edge offsets so rows stay separated.",
       "type": "integer",
       "default": 2,
       "min": 1,
@@ -61,10 +68,11 @@
     {
       "key": "holeDiameter",
       "label": "Hole diameter",
+      "description": "Used when \"Custom\" bolt size is selected.",
       "type": "number",
-      "default": 4.5,
+      "default": 5.3,
       "min": 2,
-      "max": 12,
+      "max": 20,
       "step": 0.1,
       "group": "hardware",
       "unit": "mm"
@@ -72,6 +80,7 @@
     {
       "key": "holeSpacingX",
       "label": "Hole spacing X (0 = auto)",
+      "description": "Fixed pitch along X; 0 spaces holes evenly between edge offsets.",
       "type": "number",
       "default": 0,
       "min": 0,
@@ -83,6 +92,7 @@
     {
       "key": "holeSpacingY",
       "label": "Hole spacing Y (0 = auto)",
+      "description": "Fixed pitch along Y; 0 uses even spacing.",
       "type": "number",
       "default": 0,
       "min": 0,
@@ -94,6 +104,7 @@
     {
       "key": "edgeOffsetX",
       "label": "Edge offset X",
+      "description": "Target inset from the plate edge in X for the hole grid (may be increased to keep holes inside).",
       "type": "number",
       "default": 8,
       "min": 2,
@@ -105,6 +116,7 @@
     {
       "key": "edgeOffsetY",
       "label": "Edge offset Y",
+      "description": "Target inset from the plate edge in Y for the hole grid.",
       "type": "number",
       "default": 6,
       "min": 2,
@@ -114,8 +126,49 @@
       "unit": "mm"
     },
     {
+      "key": "countersunkHoles",
+      "label": "Countersunk holes",
+      "description": "Add a countersink on both faces for flat-head screws.",
+      "type": "boolean",
+      "default": false,
+      "group": "hardware"
+    },
+    {
+      "key": "slottedHoles",
+      "label": "Slotted holes",
+      "description": "Elongate holes along X for easier alignment.",
+      "type": "boolean",
+      "default": false,
+      "group": "hardware"
+    },
+    {
+      "key": "slotOversizeMm",
+      "label": "Extra slot length",
+      "description": "Additional length (mm) along X for each slot.",
+      "type": "number",
+      "default": 2,
+      "min": 0.5,
+      "max": 15,
+      "step": 0.5,
+      "group": "hardware",
+      "unit": "mm"
+    },
+    {
+      "key": "minHoleEdgeClearance",
+      "label": "Minimum hole-to-edge",
+      "description": "Minimum solid material between hole edge and plate edge.",
+      "type": "number",
+      "default": 2,
+      "min": 0.5,
+      "max": 10,
+      "step": 0.5,
+      "group": "fit",
+      "unit": "mm"
+    },
+    {
       "key": "xyHoleCompensation",
       "label": "XY hole compensation",
+      "description": "Extra radius on printed holes for shrinkage/fit.",
       "type": "number",
       "default": 0.1,
       "min": 0,

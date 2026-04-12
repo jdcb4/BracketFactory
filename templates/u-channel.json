@@ -1,15 +1,18 @@
 {
   "id": "u-channel",
-  "name": "U-Channel Bracket",
-  "description": "Channel section with a base and two flanges for mounting along an edge or rail.",
+  "name": "U-channel bracket",
+  "alternativeNames": "Channel bracket",
+  "description": "Base with two flanges. Holes are in the flanges; length runs along X. Prints on the base (flat side down).",
+  "thumbnail": "thumbnails/u-channel.png",
   "category": "channel",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "generationStrategy": "uChannel",
   "units": "mm",
   "parameters": [
     {
       "key": "baseWidth",
-      "label": "Base width (inside span + flanges)",
+      "label": "Base width",
+      "description": "Outer width in Y (includes both flanges and the channel opening).",
       "type": "number",
       "default": 40,
       "min": 20,
@@ -21,6 +24,7 @@
     {
       "key": "leftFlangeHeight",
       "label": "Left flange height",
+      "description": "Height of the left flange above the base (along Z).",
       "type": "number",
       "default": 20,
       "min": 8,
@@ -32,6 +36,7 @@
     {
       "key": "rightFlangeHeight",
       "label": "Right flange height",
+      "description": "Height of the right flange above the base.",
       "type": "number",
       "default": 20,
       "min": 8,
@@ -43,6 +48,7 @@
     {
       "key": "thickness",
       "label": "Wall thickness",
+      "description": "Thickness of base and flanges.",
       "type": "number",
       "default": 3,
       "min": 1.6,
@@ -53,7 +59,8 @@
     },
     {
       "key": "length",
-      "label": "Length (extrusion direction)",
+      "label": "Length",
+      "description": "Extrusion length of the channel along X.",
       "type": "number",
       "default": 50,
       "min": 20,
@@ -65,10 +72,11 @@
     {
       "key": "holeDiameter",
       "label": "Hole diameter",
+      "description": "Used when \"Custom\" bolt size is selected.",
       "type": "number",
-      "default": 4.5,
+      "default": 5.3,
       "min": 2,
-      "max": 12,
+      "max": 20,
       "step": 0.1,
       "group": "hardware",
       "unit": "mm"
@@ -76,6 +84,7 @@
     {
       "key": "holesPerFlange",
       "label": "Holes per flange",
+      "description": "Number of through-holes on each flange (same X positions on left and right).",
       "type": "integer",
       "default": 2,
       "min": 1,
@@ -85,6 +94,7 @@
     {
       "key": "edgeOffset",
       "label": "End offset for holes",
+      "description": "Inset from each end of the channel for the hole pattern along X.",
       "type": "number",
       "default": 8,
       "min": 2,
@@ -94,8 +104,49 @@
       "unit": "mm"
     },
     {
+      "key": "countersunkHoles",
+      "label": "Countersunk holes",
+      "description": "Countersink on the outside of each flange (simplified).",
+      "type": "boolean",
+      "default": false,
+      "group": "hardware"
+    },
+    {
+      "key": "slottedHoles",
+      "label": "Slotted holes",
+      "description": "Vertical slots (along Z) for height adjustment on each flange.",
+      "type": "boolean",
+      "default": false,
+      "group": "hardware"
+    },
+    {
+      "key": "slotOversizeMm",
+      "label": "Extra slot length",
+      "description": "Additional vertical slot length.",
+      "type": "number",
+      "default": 2,
+      "min": 0.5,
+      "max": 15,
+      "step": 0.5,
+      "group": "hardware",
+      "unit": "mm"
+    },
+    {
+      "key": "minHoleEdgeClearance",
+      "label": "Minimum hole-to-edge",
+      "description": "Keeps flange holes away from channel ends.",
+      "type": "number",
+      "default": 2,
+      "min": 0.5,
+      "max": 10,
+      "step": 0.5,
+      "group": "fit",
+      "unit": "mm"
+    },
+    {
       "key": "xyHoleCompensation",
       "label": "XY hole compensation",
+      "description": "Extra printed hole radius.",
       "type": "number",
       "default": 0.1,
       "min": 0,

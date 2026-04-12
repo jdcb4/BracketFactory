@@ -121,6 +121,8 @@ export function PreviewViewport({
   return (
     <div
       ref={containerRef}
+      data-preview-viewport
+      data-testid="preview-viewport"
       className={`relative min-h-[320px] w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-900 ${className}`}
     />
   )

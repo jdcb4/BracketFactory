@@ -1,27 +1,31 @@
 {
   "id": "extrusion-bracket",
-  "name": "Extrusion Bracket (2020 / 3030 / 4040)",
-  "description": "Simplified bracket for common aluminum extrusion profiles with slot clearance.",
+  "name": "Extrusion bracket",
+  "alternativeNames": "2020 / 3030 / 4040 profile",
+  "description": "Bracket for common T-slot extrusions: choose profile for slot width. Foot prints on the bed (Z up along the arm).",
+  "thumbnail": "thumbnails/extrusion-bracket.png",
   "category": "extrusion",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "generationStrategy": "extrusionBracket",
   "units": "mm",
   "parameters": [
     {
       "key": "profile",
-      "label": "Profile",
+      "label": "Extrusion profile",
+      "description": "Sets slot spacing and nominal slot width for the pocket (e.g. 2020 ≈ 20 mm grid).",
       "type": "select",
       "default": "2020",
       "group": "dimensions",
       "options": [
-        { "value": "2020", "label": "2020" },
-        { "value": "3030", "label": "3030" },
-        { "value": "4040", "label": "4040" }
+        { "value": "2020", "label": "2020 (20 mm)" },
+        { "value": "3030", "label": "3030 (30 mm)" },
+        { "value": "4040", "label": "4040 (40 mm)" }
       ]
     },
     {
       "key": "armLength",
       "label": "Arm length",
+      "description": "Vertical span of the plate that faces the extrusion (along Z).",
       "type": "number",
       "default": 40,
       "min": 20,
@@ -33,6 +37,7 @@
     {
       "key": "thickness",
       "label": "Body thickness",
+      "description": "Thickness of the vertical plate and foot.",
       "type": "number",
       "default": 4,
       "min": 2,
@@ -44,6 +49,7 @@
     {
       "key": "ridgeClearance",
       "label": "Slot clearance add-on",
+      "description": "Extra width added to the slot cut so the bracket clears the extrusion web.",
       "type": "number",
       "default": 0.2,
       "min": 0,
@@ -54,18 +60,20 @@
     },
     {
       "key": "holeDiameter",
-      "label": "Mounting hole diameter",
+      "label": "Hole diameter",
+      "description": "Used when \"Custom\" bolt size is selected.",
       "type": "number",
-      "default": 4.5,
+      "default": 5.3,
       "min": 2,
-      "max": 12,
+      "max": 20,
       "step": 0.1,
       "group": "hardware",
       "unit": "mm"
     },
     {
       "key": "holeCount",
-      "label": "Hole count on arm",
+      "label": "Holes on arm",
+      "description": "Through-holes along the vertical arm (axis into the extrusion face).",
       "type": "integer",
       "default": 2,
       "min": 1,
@@ -73,8 +81,19 @@
       "group": "hardware"
     },
     {
+      "key": "holeRows",
+      "label": "Hole rows (width)",
+      "description": "Parallel rows across the foot width (Y). Capped from profile width, hole size, and minimum hole-to-edge clearance.",
+      "type": "integer",
+      "default": 1,
+      "min": 1,
+      "max": 8,
+      "group": "hardware"
+    },
+    {
       "key": "edgeOffset",
       "label": "End offset",
+      "description": "Inset from the arm ends for the first/last hole.",
       "type": "number",
       "default": 8,
       "min": 2,
@@ -84,8 +103,49 @@
       "unit": "mm"
     },
     {
+      "key": "countersunkHoles",
+      "label": "Countersunk holes",
+      "description": "Countersink on the outer face of the mounting holes (simplified cone).",
+      "type": "boolean",
+      "default": false,
+      "group": "hardware"
+    },
+    {
+      "key": "slottedHoles",
+      "label": "Slotted holes",
+      "description": "Slots run vertically (along Z) for height adjustment.",
+      "type": "boolean",
+      "default": false,
+      "group": "hardware"
+    },
+    {
+      "key": "slotOversizeMm",
+      "label": "Extra slot length",
+      "description": "Additional vertical slot length beyond the clearance hole.",
+      "type": "number",
+      "default": 2,
+      "min": 0.5,
+      "max": 15,
+      "step": 0.5,
+      "group": "hardware",
+      "unit": "mm"
+    },
+    {
+      "key": "minHoleEdgeClearance",
+      "label": "Minimum hole-to-edge",
+      "description": "Keeps holes inside the arm ends.",
+      "type": "number",
+      "default": 2,
+      "min": 0.5,
+      "max": 10,
+      "step": 0.5,
+      "group": "fit",
+      "unit": "mm"
+    },
+    {
       "key": "xyHoleCompensation",
       "label": "XY hole compensation",
+      "description": "Extra printed hole radius.",
       "type": "number",
       "default": 0.1,
       "min": 0,

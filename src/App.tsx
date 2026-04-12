@@ -18,6 +18,8 @@ export default function App() {
       <main className="mx-auto max-w-6xl px-4 py-6">
         <Routes>
           {/* More specific paths first so `/` cannot swallow nested routes (React Router ranking). */}
+          <Route path="/bracket/gusseted-corner" element={<Navigate to="/bracket/l-bracket" replace />} />
+          <Route path="/bracket/corner-bracket" element={<Navigate to="/bracket/l-bracket" replace />} />
           <Route path="/bracket/:templateId" element={<BracketConfigPage />} />
           <Route path="/" element={<CatalogPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

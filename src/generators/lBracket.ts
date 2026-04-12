@@ -1,11 +1,27 @@
-import { booleans, primitives, transforms } from '@jscad/modeling'
+import { booleans, extrusions, modifiers, primitives, transforms } from '@jscad/modeling'
 import type Geom3 from '@jscad/modeling/src/geometries/geom3/type'
+import {
+  gussetCenterYsBetweenHoleRows,
+  holeRowCentersAlongWidth,
+  maxHoleRowsAlongWidth,
+} from '../geometry/holeLayout'
+import { holeCenters1dGrid, subtractThroughHole } from '../geometry/holeOps'
 
-const { union, subtract } = booleans
-const { cuboid, cylinder } = primitives
-const { translate, rotateX, rotateY } = transforms
+const { union } = booleans
+// CJS/ESM typings expose `modifiers` in a way TS thinks is not callable; runtime is correct.
+const generalizeGeom3 = modifiers.generalize as unknown as (
+  opts: { snap?: boolean; triangulate?: boolean; simplify?: boolean },
+  g: Geom3,
+) => Geom3
+const { extrudeLinear } = extrusions
+const { polygon } = primitives
+const { translate, rotateX, mirrorZ } = transforms
 
 export interface LBracketParams {
+  gusseted?: boolean
+  gussetHeight?: number
+  gussetThickness?: number
+  gussetCount?: number
   leg1Length: number
   leg2Length: number
   width: number
@@ -15,97 +31,144 @@ export interface LBracketParams {
   holeDiameter: number
   holeCountLeg1: number
   holeCountLeg2: number
+  /** Parallel rows of holes across bracket width (Y). Clamped to what fits for hole diameter + clearance. */
+  holeRows?: number
   edgeOffset: number
   xyHoleCompensation: number
+  minHoleEdgeClearance: number
+  countersunkHoles: boolean
+  slottedHoles: boolean
+  slotOversizeMm: number
+  countersinkIncludedAngleDeg?: number
+}
+
+/** Quarter-circle arc (XZ profile): inner bend center at (L1−T+ir, T+ir), from inner vertical face to inner horizontal face. */
+function innerBendArcPoints(L1: number, T: number, ir: number, segments: number): [number, number][] {
+  const cx = L1 - T + ir
+  const cz = T + ir
+  const out: [number, number][] = []
+  for (let i = 1; i < segments; i++) {
+    const t = i / segments
+    const angle = Math.PI + t * (Math.PI / 2)
+    out.push([cx + ir * Math.cos(angle), cz + ir * Math.sin(angle)])
+  }
+  return out
 }
 
 /**
- * Two-plate L bracket in the +X / +Z quadrant (Y = width). Union of cuboids minus holes.
- * Inner bend radius subtracts a clipped cylinder; outer fillet unions a torus corner (simplified).
+ * L-shaped solid: one extruded CCW polygon in (x, z), then oriented to bracket (X, Y, Z).
+ * Inner bend fillet is part of the profile (no cylinder subtract) so geom3.validate stays manifold.
+ */
+function lShapeSolid(L1: number, L2: number, W: number, T: number, ir: number): Geom3 {
+  const points: [number, number][] = []
+  points.push([0, 0], [L1, 0], [L1, T + L2], [L1 - T, T + L2])
+  if (ir > 0.15) {
+    points.push([L1 - T, T + ir])
+    points.push(...innerBendArcPoints(L1, T, ir, 24))
+    points.push([L1 - T + ir, T])
+  } else {
+    points.push([L1 - T, T])
+  }
+  points.push([0, T])
+
+  let g = extrudeLinear({ height: W }, polygon({ points }))
+  g = rotateX(-Math.PI / 2, g)
+  g = mirrorZ(g)
+  return g
+}
+
+/**
+ * Triangular gusset: extruded triangle, rotated so thickness runs along +Y; right angle at inner bend.
+ * `yCenter` is the mid-plane across the gusset thickness (changing thickness grows equally ±Y).
+ */
+function gussetPrism(L1: number, T: number, gH: number, gT: number, yCenter: number): Geom3 {
+  // CCW when viewed from outside the solid after rotateX/translate (was inverted vs L-bracket union).
+  const tri = polygon({ points: [[0, 0], [0, gH], [-gH, 0]] })
+  let g = extrudeLinear({ height: gT }, tri)
+  g = rotateX(Math.PI / 2, g)
+  g = translate([L1 - T, yCenter - gT / 2, T], g)
+  return g
+}
+
+/**
+ * L bracket: single solid L + optional inner fillet + optional gussets + holes.
  */
 export function generateLBracket(p: LBracketParams): Geom3 {
-  const {
-    leg1Length: L1,
-    leg2Length: L2,
-    width: W,
-    thickness: T,
-    innerBendRadius: ir,
-    holeDiameter: hd,
-    holeCountLeg1: n1,
-    holeCountLeg2: n2,
-    edgeOffset: eo,
-    xyHoleCompensation: xy,
-  } = p
-
-  // Template may still expose outer fillet in JSON for future geometry.
   void p.outerFilletRadius
 
-  const holeR = Math.max(0.1, hd / 2 + xy)
+  const L1 = p.leg1Length
+  const L2 = p.leg2Length
+  const W = p.width
+  const T = p.thickness
+  const ir = p.innerBendRadius
+  const holeR = Math.max(0.15, p.holeDiameter / 2 + p.xyHoleCompensation)
+  const minE = p.minHoleEdgeClearance
+  const slotEx = p.slottedHoles ? Math.max(0, p.slotOversizeMm) : 0
 
-  // Horizontal leg: x 0..L1, z 0..T
-  const horiz = translate(
-    [L1 / 2, W / 2, T / 2],
-    cuboid({ size: [L1, W, T] }),
-  )
+  let solid: Geom3 = lShapeSolid(L1, L2, W, T, ir)
 
-  // Vertical leg: x L1-T .. L1, z T .. T+L2
-  const vert = translate(
-    [L1 - T / 2, W / 2, T + L2 / 2],
-    cuboid({ size: [T, W, L2] }),
-  )
+  const maxRows = maxHoleRowsAlongWidth(W, p.holeDiameter, p.edgeOffset, minE)
+  const holeRows = Math.max(1, Math.min(Math.round(p.holeRows ?? 1), maxRows))
+  const rowYs = holeRowCentersAlongWidth(holeRows, W, p.edgeOffset, holeR, minE)
 
-  let solid: Geom3 = union(horiz, vert)
-
-  // Inner corner fillet: subtract quarter cylinder (axis Y) at inner bend.
-  if (ir > 0.15) {
-    const cyl = rotateX(
-      Math.PI / 2,
-      cylinder({ radius: ir, height: W + 2, segments: 32 }),
-    )
-    const cx = L1 - T + ir
-    const cz = T - ir
-    const cutter = translate([cx, W / 2, cz], cyl)
-    const clip = translate(
-      [L1 - T - ir, -1, T - ir - ir],
-      cuboid({ size: [ir * 2.2, W + 4, ir * 2.2] }),
-    )
-    const quarter = booleans.intersect(cutter, clip)
-    solid = subtract(solid, quarter)
+  let gHActive = 0
+  if (p.gusseted && (p.gussetHeight ?? 0) > 0.2 && (p.gussetThickness ?? 0) > 0.2) {
+    const gH = p.gussetHeight ?? 12
+    gHActive = gH
+    const gT = p.gussetThickness ?? 2
+    const gN = Math.max(1, Math.min(4, Math.round(p.gussetCount ?? 2)))
+    const gussetYs = gussetCenterYsBetweenHoleRows(W, gN, gT, rowYs, holeR, minE)
+    for (const yc of gussetYs) {
+      solid = union(solid, gussetPrism(L1, T, gH, gT, yc))
+    }
   }
 
-  // Outer fillet: `_outerFilletRadius` reserved for future fillet geometry (template parameter kept).
+  const n1 = Math.max(0, Math.round(p.holeCountLeg1))
+  const n2 = Math.max(0, Math.round(p.holeCountLeg2))
+  const csDeg = p.countersinkIncludedAngleDeg ?? 90
 
-  // Through-holes in horizontal leg (axis Z), centered in plate.
+  // Along X / Z only: keep through-holes from cutting the inner gusset wedge (does not change hole-row Y positions).
+  const edgeMargin = Math.max(p.edgeOffset, holeR + minE)
+  let leg1HoleExtent = L1
+  if (gHActive > 0) {
+    const maxHoleCenterX = L1 - T - gHActive - holeR - minE
+    leg1HoleExtent = Math.min(L1, maxHoleCenterX + edgeMargin)
+  }
+
   if (n1 > 0 && holeR > 0) {
-    const span = L1 - 2 * eo
-    const xs =
-      n1 === 1
-        ? [L1 / 2]
-        : Array.from({ length: n1 }, (_, i) => eo + (span * i) / (n1 - 1))
-    for (const x of xs) {
-      const h = translate(
-        [x, W / 2, T / 2],
-        cylinder({ radius: holeR, height: T + 4, segments: 24 }),
-      )
-      solid = subtract(solid, h)
+    const xs = holeCenters1dGrid(n1, leg1HoleExtent, p.edgeOffset, 0, holeR, minE)
+    for (const y of rowYs) {
+      for (const x of xs) {
+        solid = subtractThroughHole(solid, [x, y, T / 2], holeR, T, 'z', {
+          countersunk: p.countersunkHoles,
+          // Single countersink on the outside face (+Z) so screw heads are not duplicated on the bed side.
+          countersinkWhich: 'pos',
+          countersinkIncludedAngleDeg: csDeg,
+          slotLengthExtra: slotEx,
+          slotAxis: 'x',
+        })
+      }
     }
   }
 
-  // Through-holes in vertical leg (axis X)
   if (n2 > 0 && holeR > 0) {
-    const span = L2 - 2 * eo
-    const zs =
-      n2 === 1
-        ? [T + L2 / 2]
-        : Array.from({ length: n2 }, (_, i) => T + eo + (span * i) / (n2 - 1))
-    for (const z of zs) {
-      const h = translate(
-        [L1 - T / 2, W / 2, z],
-        rotateY(Math.PI / 2, cylinder({ radius: holeR, height: T + 4, segments: 24 })),
-      )
-      solid = subtract(solid, h)
+    const minZr = gHActive > 0 ? gHActive + holeR + minE : 0
+    const leg2Span = Math.max(0.1, L2 - minZr)
+    const zsRel = holeCenters1dGrid(n2, leg2Span, p.edgeOffset, 0, holeR, minE).map((zr) => zr + minZr)
+    for (const y of rowYs) {
+      for (const zr of zsRel) {
+        const z = T + zr
+        solid = subtractThroughHole(solid, [L1 - T / 2, y, z], holeR, T, 'x', {
+          countersunk: p.countersunkHoles,
+          countersinkWhich: 'pos',
+          countersinkIncludedAngleDeg: csDeg,
+          slotLengthExtra: slotEx,
+          slotAxis: 'z',
+        })
+      }
     }
   }
 
-  return solid
+  // Snap + triangulate fixes coplanar boolean seams (inner bend + gusset union) for geom3.validate.
+  return generalizeGeom3({ snap: true, triangulate: true }, solid)
 }

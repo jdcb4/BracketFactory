@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "test:e2e:full": "npm run build && playwright test"
+    "test:e2e:full": "npm run build && playwright test",
+    "thumbnails": "node scripts/capture-thumbnails.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

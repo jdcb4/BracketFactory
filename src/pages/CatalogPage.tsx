@@ -16,9 +16,10 @@ export function CatalogPage() {
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase()
     return items.filter(({ template }) => {
+      if (!template.id || !template.name) return false
       if (cat !== 'all' && template.category !== cat) return false
       if (!ql) return true
-      const hay = `${template.name} ${template.description} ${template.id}`.toLowerCase()
+      const hay = `${template.name} ${template.description} ${template.id} ${template.alternativeNames ?? ''}`.toLowerCase()
       return hay.includes(ql)
     })
   }, [items, q, cat])
@@ -67,6 +68,16 @@ export function CatalogPage() {
               to={`/bracket/${template.id}`}
               className="block h-full rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-600"
             >
+              {template.thumbnail ? (
+                <div className="mb-3 flex aspect-[5/3] items-center justify-center overflow-hidden rounded-lg border border-slate-100 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50">
+                  <img
+                    src={`${import.meta.env.BASE_URL}${template.thumbnail}`}
+                    alt=""
+                    className="max-h-full w-full object-contain object-center"
+                    loading="lazy"
+                  />
+                </div>
+              ) : null}
               <div className="flex items-start justify-between gap-2">
                 <h2 className="text-lg font-medium text-slate-900 dark:text-white">{template.name}</h2>
                 <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-400">
