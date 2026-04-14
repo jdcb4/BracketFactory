@@ -126,7 +126,6 @@ function BracketConfigurator({ template }: { template: BracketTemplate }) {
     mode: 'onChange',
   })
 
-  /* eslint-disable-next-line react-hooks/incompatible-library -- RHF watch drives live preview */
   const watched = form.watch() as Record<string, unknown>
 
   const { geometry, geomError } = useMemo((): { geometry: Geom3 | null; geomError: string | null } => {
@@ -142,15 +141,21 @@ function BracketConfigurator({ template }: { template: BracketTemplate }) {
   }, [template, watched])
 
   const processId = (watched['processId'] ?? 'fdm_pla_abs') as ProcessId
-  const thickness = Number(watched['thickness'] ?? 3)
+  const thickness = Number(
+    watched['thickness'] ??
+      watched['legThickness'] ??
+      watched['strapThickness'] ??
+      watched['boardThickness'] ??
+      3,
+  )
   const mountingBolt = String(watched['mountingBolt'] ?? 'M5')
-  const customHoleDiameterMm = Number(watched['holeDiameter'] ?? 4.5)
+  const customHoleDiameterMm = Number(watched['holeDiameter'] ?? watched['mountHoleDiameter'] ?? 4.5)
   const effectiveHoleD = resolveClearanceHoleDiameterMm(mountingBolt, customHoleDiameterMm)
 
   const visibleParams = useMemo(() => {
     let list = template.parameters
     const gusseted = watched['gusseted'] === true
-    const slotted = watched['slottedHoles'] === true
+    const slotted = watched['slottedHoles'] === true || watched['slottedWallHoles'] === true
     if (template.id === 'l-bracket' && !gusseted) {
       list = list.filter((p) => !['gussetHeight', 'gussetThickness', 'gussetCount'].includes(p.key))
     }
@@ -160,9 +165,14 @@ function BracketConfigurator({ template }: { template: BracketTemplate }) {
     return list
   }, [template, watched])
 
-  const hasHoles = visibleParams.some((p) => p.key === 'holeDiameter')
+  const hasHoles = visibleParams.some((p) => p.key === 'holeDiameter' || p.key === 'mountHoleDiameter')
 
-  const paramsSansHole = visibleParams.filter((p) => p.key !== 'holeDiameter')
+  const paramsSansHole = visibleParams.filter((p) => p.key !== 'holeDiameter' && p.key !== 'mountHoleDiameter')
+
+  const customHoleParam = useMemo(
+    () => template.parameters.find((p) => p.key === 'holeDiameter' || p.key === 'mountHoleDiameter'),
+    [template],
+  )
 
   const paramsByGroup = GROUP_ORDER.map((g) => ({
     group: g,
@@ -183,7 +193,9 @@ function BracketConfigurator({ template }: { template: BracketTemplate }) {
   useEffect(() => {
     form.reset(mergeFormDefaults(template))
     const firstGroup = GROUP_ORDER.find((g) =>
-      template.parameters.some((p) => p.group === g && !p.advanced && p.key !== 'holeDiameter'),
+      template.parameters.some(
+        (p) => p.group === g && !p.advanced && p.key !== 'holeDiameter' && p.key !== 'mountHoleDiameter',
+      ),
     )
     setOpenSection(firstGroup ? `group-${firstGroup}` : hasHoles ? 'bolt' : 'process')
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: remount defaults + same-route navigation via location.key
@@ -374,7 +386,13 @@ function BracketConfigurator({ template }: { template: BracketTemplate }) {
                   ))}
                 </select>
               </label>
-              {mountingBolt === 'custom' ? (
+              {mountingBolt === 'custom' && customHoleParam ? (
+                <ParameterField
+                  param={customHoleParam}
+                  register={form.register}
+                  errors={form.formState.errors}
+                />
+              ) : mountingBolt === 'custom' ? (
                 <ParameterField
                   param={{
                     key: 'holeDiameter',

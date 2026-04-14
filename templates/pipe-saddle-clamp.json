@@ -1,0 +1,253 @@
+{
+  "id": "pipe-saddle-clamp",
+  "name": "Pipe saddle clamp",
+  "alternativeNames": "Saddle clamp, pipe strap, conduit clamp, hose clamp, P-clamp",
+  "description": "Curved cradle that wraps over a round pipe/conduit/hose, with a flat base and side tabs for screw-down mounting. Pipe axis runs along X; base sits flat on the bed (saddle opens +Z). The underside of the saddle is a bridge — keep diameter modest or enable the bridge support strut. For large pipes, print on the side (rotate about X) for stronger layer orientation.",
+  "thumbnail": "thumbnails/pipe-saddle-clamp.png",
+  "category": "clamp",
+  "version": "1.0.0",
+  "generationStrategy": "pipeSaddleClamp",
+  "units": "mm",
+  "parameters": [
+    {
+      "key": "pipeDiameter",
+      "label": "Pipe outer diameter",
+      "description": "Nominal OD of the pipe/conduit/hose being clamped (e.g. 22.3 mm = ½\" PVC, 26.7 mm = ¾\" PVC, 21.3 mm = ½\" EMT, 32 mm = 1\" PVC).",
+      "type": "number",
+      "default": 25,
+      "min": 6,
+      "max": 120,
+      "step": 0.1,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "strapWidth",
+      "label": "Strap width",
+      "description": "Width of the saddle along the pipe axis (X). Wider straps grip more contact area but use more filament.",
+      "type": "number",
+      "default": 18,
+      "min": 6,
+      "max": 80,
+      "step": 0.5,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "strapThickness",
+      "label": "Strap (wall) thickness",
+      "description": "Wall thickness of the curved saddle around the pipe. Below ~2 mm tabs and saddle wall become fragile.",
+      "type": "number",
+      "default": 3,
+      "min": 1.6,
+      "max": 8,
+      "step": 0.1,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "tabLength",
+      "label": "Tab length (each side)",
+      "description": "Flat ear extending from each side of the saddle to host the mounting screw. Measured from the saddle outer edge outward.",
+      "type": "number",
+      "default": 14,
+      "min": 6,
+      "max": 50,
+      "step": 0.5,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "baseThickness",
+      "label": "Base / tab thickness",
+      "description": "Thickness of the flat tabs that contact the mounting surface (Z). Set ≥ strap thickness for stiffness; thinner tabs crack around the screw head.",
+      "type": "number",
+      "default": 4,
+      "min": 1.6,
+      "max": 10,
+      "step": 0.1,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "pipeLift",
+      "label": "Pipe lift above base",
+      "description": "Gap between the base top face and the bottom of the pipe. Use a small lift (1–3 mm) for cable routing behind the pipe, or to shorten the underside bridge span.",
+      "type": "number",
+      "default": 0,
+      "min": 0,
+      "max": 30,
+      "step": 0.5,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "wrapAngle",
+      "label": "Wrap angle",
+      "description": "How far the saddle wraps around the pipe, in degrees from straight-up (180° = full half-circle, 210°–240° = beyond the equator for snap retention, requires flexible material). Larger wraps grip better but increase the bridge span underneath.",
+      "type": "number",
+      "default": 180,
+      "min": 120,
+      "max": 270,
+      "step": 5,
+      "group": "dimensions",
+      "unit": "deg"
+    },
+    {
+      "key": "pipeClearance",
+      "label": "Pipe diametral clearance",
+      "description": "Added to the pipe diameter for a working fit (slip fit ≈ 0.2–0.4 mm; tight clamping fit ≈ 0.0–0.2 mm). Tune to your printer.",
+      "type": "number",
+      "default": 0.3,
+      "min": 0,
+      "max": 1.5,
+      "step": 0.05,
+      "group": "fit",
+      "unit": "mm"
+    },
+    {
+      "key": "mountHoleDiameter",
+      "label": "Mounting hole diameter",
+      "description": "Used when \"Custom\" bolt size is selected in the mounting section. Through the tabs into the mount surface.",
+      "type": "number",
+      "default": 4.5,
+      "min": 2,
+      "max": 12,
+      "step": 0.1,
+      "group": "hardware",
+      "unit": "mm"
+    },
+    {
+      "key": "mountHoleCount",
+      "label": "Mount holes per tab",
+      "description": "Through-holes per side tab, distributed along the pipe axis (X).",
+      "type": "integer",
+      "default": 1,
+      "min": 1,
+      "max": 4,
+      "group": "hardware"
+    },
+    {
+      "key": "edgeOffset",
+      "label": "Hole edge offset",
+      "description": "Inset from each tab outer edge (X end) for the first/last hole center. Also applied from the saddle wall side so the screw head clears the curved wall.",
+      "type": "number",
+      "default": 5,
+      "min": 2,
+      "max": 25,
+      "step": 0.5,
+      "group": "hardware",
+      "unit": "mm"
+    },
+    {
+      "key": "countersunkHoles",
+      "label": "Countersunk holes",
+      "description": "Conical recess on the top face of each tab for flat-head mounting screws so heads sit flush. Countersink angle follows bolt preset (90° metric, 82° UNC).",
+      "type": "boolean",
+      "default": true,
+      "group": "hardware"
+    },
+    {
+      "key": "slottedHoles",
+      "label": "Slotted mount holes",
+      "description": "Elongate the mounting holes along X for alignment adjustment along the pipe run.",
+      "type": "boolean",
+      "default": false,
+      "group": "hardware"
+    },
+    {
+      "key": "slotOversizeMm",
+      "label": "Extra slot length",
+      "description": "Added length (mm) along X beyond the bolt clearance diameter.",
+      "type": "number",
+      "default": 2,
+      "min": 0.5,
+      "max": 15,
+      "step": 0.5,
+      "group": "hardware",
+      "unit": "mm"
+    },
+    {
+      "key": "buttressed",
+      "label": "Side buttresses",
+      "description": "Adds triangular gussets on the outsides of the saddle (front and back faces in X) to brace the cradle against the base. Recommended for pipes ≥ 30 mm or any cantilever load on the pipe.",
+      "type": "boolean",
+      "default": false,
+      "group": "reinforcement"
+    },
+    {
+      "key": "buttressHeight",
+      "label": "Buttress height",
+      "description": "How far each buttress rises up the saddle wall from the base (along Z). Capped to the saddle outer height.",
+      "type": "number",
+      "default": 10,
+      "min": 3,
+      "max": 60,
+      "step": 0.5,
+      "group": "reinforcement",
+      "unit": "mm"
+    },
+    {
+      "key": "buttressThickness",
+      "label": "Buttress thickness",
+      "description": "Buttress extent along the pipe axis (X). Centered on each saddle face so changing thickness grows equally to both sides.",
+      "type": "number",
+      "default": 2,
+      "min": 1,
+      "max": 6,
+      "step": 0.1,
+      "group": "reinforcement",
+      "unit": "mm"
+    },
+    {
+      "key": "edgeChamfer",
+      "label": "Saddle edge chamfer",
+      "description": "Small chamfer on the top open edge of the saddle so the pipe slides in cleanly and stress concentrates less. 0 disables.",
+      "type": "number",
+      "default": 0.4,
+      "min": 0,
+      "max": 2,
+      "step": 0.1,
+      "group": "reinforcement",
+      "unit": "mm",
+      "advanced": true
+    },
+    {
+      "key": "bridgeSupport",
+      "label": "Bridge support strut",
+      "description": "Adds a thin sacrificial wall under the saddle bridge (between pipe bottom and base) to assist FDM bridging. Snip away after printing. Auto-suggested when the underside span exceeds the printability warning threshold (~10 mm).",
+      "type": "boolean",
+      "default": false,
+      "group": "print"
+    },
+    {
+      "key": "minHoleEdgeClearance",
+      "label": "Minimum hole-to-edge",
+      "description": "Keeps mounting hole centers away from tab edges so the tab cannot break out around the screw.",
+      "type": "number",
+      "default": 2,
+      "min": 0.5,
+      "max": 10,
+      "step": 0.5,
+      "group": "fit",
+      "unit": "mm"
+    },
+    {
+      "key": "xyHoleCompensation",
+      "label": "XY hole compensation",
+      "description": "Extra radius on mounting holes for printer tolerance (subtract from nominal).",
+      "type": "number",
+      "default": 0.1,
+      "min": 0,
+      "max": 0.5,
+      "step": 0.02,
+      "group": "fit",
+      "unit": "mm",
+      "advanced": true
+    }
+  ],
+  "preview": {
+    "cameraPosition": [70, 70, 55],
+    "target": [10, 0, 12]
+  }
+}

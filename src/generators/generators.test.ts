@@ -10,9 +10,13 @@ describe('generators', () => {
       'flatPlate',
       'uChannel',
       'extrusionBracket',
+      'shelfBracket',
+      'frenchCleat',
+      'pipeSaddleClamp',
     ] as const
+    const base = { mountingBolt: 'M5' as const }
     for (const s of strategies) {
-      const g = generateFromStrategy(s, {})
+      const g = generateFromStrategy(s, base)
       const polys = geometries.geom3.toPolygons(g)
       expect(polys.length).toBeGreaterThan(0)
     }

@@ -2,7 +2,10 @@ import type Geom3 from '@jscad/modeling/src/geometries/geom3/type'
 import { countersinkIncludedAngleDegForBolt, resolveClearanceHoleDiameterMm } from '../data/mountingHardware'
 import { generateExtrusionBracket } from './extrusionBracket'
 import { generateFlatPlate } from './flatPlate'
+import { generateFrenchCleat } from './frenchCleat'
 import { generateLBracket } from './lBracket'
+import { generatePipeSaddleClamp } from './pipeSaddleClamp'
+import { generateShelfBracket } from './shelfBracket'
 import { generateUChannel } from './uChannel'
 
 export type ParamRecord = Record<string, string | number | boolean>
@@ -22,6 +25,11 @@ function bool(r: ParamRecord, key: string, fallback = false): boolean {
   return fallback
 }
 
+function str(r: ParamRecord, key: string, fallback: string): string {
+  const v = r[key]
+  return typeof v === 'string' ? v : fallback
+}
+
 /** Keys consumed by the UI / validation — not passed to JSCAD builders. */
 const UI_KEYS = new Set(['processId', 'mountingBolt'])
 
@@ -31,7 +39,7 @@ const UI_KEYS = new Set(['processId', 'mountingBolt'])
 export function prepareGeneratorParams(raw: ParamRecord): ParamRecord {
   const out: ParamRecord = { ...raw }
   const bolt = String(out.mountingBolt ?? 'custom')
-  const customD = num(out, 'holeDiameter', 4.5)
+  const customD = num(out, 'holeDiameter', num(out, 'mountHoleDiameter', 4.5))
   out.holeDiameter = resolveClearanceHoleDiameterMm(bolt, customD)
   out.countersinkIncludedAngleDeg = countersinkIncludedAngleDegForBolt(bolt)
   for (const k of UI_KEYS) {
@@ -131,6 +139,78 @@ export function generateFromStrategy(strategy: string, raw: ParamRecord): Geom3 
         countersunkHoles: bool(p, 'countersunkHoles', false),
         slottedHoles: bool(p, 'slottedHoles', false),
         slotOversizeMm: num(p, 'slotOversizeMm', 2),
+        countersinkIncludedAngleDeg: num(p, 'countersinkIncludedAngleDeg', 90),
+      })
+    case 'shelfBracket':
+      return generateShelfBracket({
+        wallLegHeight: num(p, 'wallLegHeight', 80),
+        shelfLegLength: num(p, 'shelfLegLength', 100),
+        width: num(p, 'width', 12),
+        legThickness: num(p, 'legThickness', 4),
+        style: str(p, 'style', 'triangular') === 'l-shaped' ? 'l-shaped' : 'triangular',
+        braceThickness: num(p, 'braceThickness', 4),
+        braceFootOffset: num(p, 'braceFootOffset', 0),
+        lighteningCutout: bool(p, 'lighteningCutout', true),
+        lighteningMargin: num(p, 'lighteningMargin', 6),
+        innerFilletRadius: num(p, 'innerFilletRadius', 3),
+        holeDiameter: num(p, 'holeDiameter', 4.5),
+        wallHoleCount: int(p, 'wallHoleCount', 2),
+        shelfHoleCount: int(p, 'shelfHoleCount', 2),
+        edgeOffset: num(p, 'edgeOffset', 10),
+        wallHoleCountersunk: bool(p, 'wallHoleCountersunk', true),
+        screwAccessSlots: bool(p, 'screwAccessSlots', true),
+        screwAccessSlotDiameter: num(p, 'screwAccessSlotDiameter', 8),
+        slottedWallHoles: bool(p, 'slottedWallHoles', false),
+        slotOversizeMm: num(p, 'slotOversizeMm', 3),
+        xyHoleCompensation: num(p, 'xyHoleCompensation', 0.1),
+        minHoleEdgeClearance: num(p, 'minHoleEdgeClearance', 3),
+        countersinkIncludedAngleDeg: num(p, 'countersinkIncludedAngleDeg', 90),
+      })
+    case 'frenchCleat':
+      return generateFrenchCleat({
+        cleatType: str(p, 'cleatType', 'wall') === 'item' ? 'item' : 'wall',
+        length: num(p, 'length', 80),
+        boardThickness: num(p, 'boardThickness', 18),
+        totalHeight: num(p, 'totalHeight', 50),
+        wedgeAngle: num(p, 'wedgeAngle', 45),
+        printTolerance: num(p, 'printTolerance', 0.3),
+        lockTab: bool(p, 'lockTab', false),
+        lockTabDepth: num(p, 'lockTabDepth', 1.5),
+        endChamfer: num(p, 'endChamfer', 1),
+        wedgeReinforcement: bool(p, 'wedgeReinforcement', false),
+        holeDiameter: num(p, 'holeDiameter', 4.5),
+        holeCount: int(p, 'holeCount', 2),
+        edgeOffset: num(p, 'edgeOffset', 12),
+        countersunkHoles: bool(p, 'countersunkHoles', true),
+        slottedHoles: bool(p, 'slottedHoles', false),
+        slotOversizeMm: num(p, 'slotOversizeMm', 3),
+        xyHoleCompensation: num(p, 'xyHoleCompensation', 0.1),
+        minHoleEdgeClearance: num(p, 'minHoleEdgeClearance', 3),
+        countersinkIncludedAngleDeg: num(p, 'countersinkIncludedAngleDeg', 90),
+      })
+    case 'pipeSaddleClamp':
+      return generatePipeSaddleClamp({
+        pipeDiameter: num(p, 'pipeDiameter', 25),
+        strapWidth: num(p, 'strapWidth', 18),
+        strapThickness: num(p, 'strapThickness', 3),
+        tabLength: num(p, 'tabLength', 14),
+        baseThickness: num(p, 'baseThickness', 4),
+        pipeLift: num(p, 'pipeLift', 0),
+        wrapAngle: num(p, 'wrapAngle', 180),
+        pipeClearance: num(p, 'pipeClearance', 0.3),
+        mountHoleDiameter: num(p, 'holeDiameter', 4.5),
+        mountHoleCount: int(p, 'mountHoleCount', 1),
+        edgeOffset: num(p, 'edgeOffset', 5),
+        countersunkHoles: bool(p, 'countersunkHoles', true),
+        slottedHoles: bool(p, 'slottedHoles', false),
+        slotOversizeMm: num(p, 'slotOversizeMm', 2),
+        buttressed: bool(p, 'buttressed', false),
+        buttressHeight: num(p, 'buttressHeight', 10),
+        buttressThickness: num(p, 'buttressThickness', 2),
+        edgeChamfer: num(p, 'edgeChamfer', 0.4),
+        bridgeSupport: bool(p, 'bridgeSupport', false),
+        xyHoleCompensation: num(p, 'xyHoleCompensation', 0.1),
+        minHoleEdgeClearance: num(p, 'minHoleEdgeClearance', 2),
         countersinkIncludedAngleDeg: num(p, 'countersinkIncludedAngleDeg', 90),
       })
     default:

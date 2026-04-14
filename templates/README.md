@@ -4,7 +4,7 @@
 - Validate against `templates/_schema.json` (`npm test` runs Ajv on every file).
 - Do not edit `_schema.json` unless you intend to change the contract for all templates.
 
-Each template’s `generationStrategy` must exist in `src/generators/registry.ts`.
+Each template’s `generationStrategy` must exist in `src/generators/registry.ts` and must be implemented by a generator under `src/generators/` (see **`docs/template-contributor-guide.md`** for JSON + code + tests).
 
 ## Thumbnail images
 

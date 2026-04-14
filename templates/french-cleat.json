@@ -1,0 +1,216 @@
+{
+  "id": "french-cleat",
+  "name": "French cleat",
+  "alternativeNames": "Cleat hanger, wall cleat, item cleat, dovetail wall mount, modular wall hanger",
+  "description": "45° dovetail mating bracket for modular wall organisation. Generates either the wall half (mounts to the wall, hooked edge facing up) or the item half (mounts to the back of the thing being hung, hooked edge facing down) — the two interlock when the item is lowered onto the wall cleat. Length runs along X; back face sits flat on the bed (z=0) so the 45° face prints as a sloped top surface, no supports required. Print one of each in matching tolerance, and verify fit on a short test pair before committing to long runs.",
+  "thumbnail": "thumbnails/french-cleat.png",
+  "category": "cleat",
+  "version": "1.0.0",
+  "generationStrategy": "frenchCleat",
+  "units": "mm",
+  "parameters": [
+    {
+      "key": "cleatType",
+      "label": "Cleat half",
+      "description": "Wall = the strip mounted to the wall (wedge points up, holes through the back face into wall anchors). Item = the matching strip mounted to the back of the object being hung (wedge points down, holes through the front face into the item).",
+      "type": "select",
+      "default": "wall",
+      "group": "dimensions",
+      "options": [
+        { "value": "wall", "label": "Wall cleat" },
+        { "value": "item", "label": "Item cleat" }
+      ]
+    },
+    {
+      "key": "length",
+      "label": "Cleat length",
+      "description": "Length along X. Wall cleats often run a long span across the wall; item cleats are sized to the back of the object being hung. Above ~250 mm consider splitting into multiple short cleats — long printed cleats warp on cooling and waste filament.",
+      "type": "number",
+      "default": 80,
+      "min": 30,
+      "max": 300,
+      "step": 0.5,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "boardThickness",
+      "label": "Board thickness",
+      "description": "Cleat board thickness in Y (how far the cleat stands proud of the wall, before the wedge). Match this to your existing system — common values: 12.7 mm (½\"), 18 mm, 19.05 mm (¾\"). Mixing thicknesses between wall and item cleats is the most common cause of bad fit.",
+      "type": "number",
+      "default": 18,
+      "min": 6,
+      "max": 30,
+      "step": 0.1,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "totalHeight",
+      "label": "Total height",
+      "description": "Height in Z, including both the straight back portion and the 45° wedge. Taller cleats give more screw real estate and stronger engagement; ~50–70 mm is typical.",
+      "type": "number",
+      "default": 50,
+      "min": 25,
+      "max": 150,
+      "step": 0.5,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "wedgeAngle",
+      "label": "Wedge angle",
+      "description": "Angle of the bevelled face from vertical. The community standard is 45°; values much below ~40° dramatically reduce holding force (one popular design noted 30° \"wasn't a good idea\"). Adjustable here for compatibility with non-standard existing systems.",
+      "type": "number",
+      "default": 45,
+      "min": 30,
+      "max": 60,
+      "step": 1,
+      "group": "dimensions",
+      "unit": "deg"
+    },
+    {
+      "key": "printTolerance",
+      "label": "Mating clearance",
+      "description": "Total gap between the wall cleat and item cleat at the engaging surfaces. Typical values: 0.1 mm (PETG, well-tuned printer) to 0.4 mm (PLA, hot/cold printer). Apply the same value when generating both halves of a pair. Tune by printing a short test pair first — community consensus is this is the single most fit-critical parameter.",
+      "type": "number",
+      "default": 0.3,
+      "min": 0,
+      "max": 1.0,
+      "step": 0.05,
+      "group": "fit",
+      "unit": "mm"
+    },
+    {
+      "key": "lockTab",
+      "label": "Anti-lift lock tab",
+      "description": "Adds a small bump on the underside of the item cleat that engages a matching detent on the wall cleat, requiring a deliberate forward-and-up motion to remove. Prevents items being knocked off the wall accidentally — the most frequent complaint with plain cleats. Generated symmetrically on both halves so wall and item cleats engage correctly.",
+      "type": "boolean",
+      "default": false,
+      "group": "reinforcement"
+    },
+    {
+      "key": "lockTabDepth",
+      "label": "Lock tab depth",
+      "description": "How far the lock bump protrudes (mm). Larger = more secure but harder to install/remove. Ignored when lock tab is off.",
+      "type": "number",
+      "default": 1.5,
+      "min": 0.5,
+      "max": 4,
+      "step": 0.1,
+      "group": "reinforcement",
+      "unit": "mm"
+    },
+    {
+      "key": "endChamfer",
+      "label": "End chamfer",
+      "description": "Small chamfer on the X ends of the cleat for cleaner intersections when butting cleats together along a wall and to relieve sharp printed corners. 0 disables.",
+      "type": "number",
+      "default": 1,
+      "min": 0,
+      "max": 5,
+      "step": 0.1,
+      "group": "reinforcement",
+      "unit": "mm"
+    },
+    {
+      "key": "wedgeReinforcement",
+      "label": "Wedge tip reinforcement",
+      "description": "Slightly thickens the engaging tip of the wedge for strength on item cleats carrying heavier loads. Adds 1–2 mm of material at the tip without changing the mating geometry. Recommended for item cleats holding > 2 kg.",
+      "type": "boolean",
+      "default": false,
+      "group": "reinforcement"
+    },
+    {
+      "key": "holeDiameter",
+      "label": "Hole diameter",
+      "description": "Used when \"Custom\" bolt size is selected in the mounting section. Wall cleats: clearance for wall anchor screws (typically #8 wood screw / 4.5 mm). Item cleats: clearance for screws into the item (often shorter wood screws or M3/M4 machine screws into nuts).",
+      "type": "number",
+      "default": 4.5,
+      "min": 2,
+      "max": 10,
+      "step": 0.1,
+      "group": "hardware",
+      "unit": "mm"
+    },
+    {
+      "key": "holeCount",
+      "label": "Mount holes",
+      "description": "Through-holes along X, distributed evenly between the edge offsets. For wall cleats, ensure spacing matches your wall stud or anchor pattern (typically 400 mm or 600 mm centres for studs).",
+      "type": "integer",
+      "default": 2,
+      "min": 1,
+      "max": 8,
+      "group": "hardware"
+    },
+    {
+      "key": "edgeOffset",
+      "label": "Hole edge offset",
+      "description": "Inset from each end of the cleat for the first/last hole centre.",
+      "type": "number",
+      "default": 12,
+      "min": 4,
+      "max": 50,
+      "step": 0.5,
+      "group": "hardware",
+      "unit": "mm"
+    },
+    {
+      "key": "countersunkHoles",
+      "label": "Countersunk holes",
+      "description": "Conical recess so flat-head screw heads sit flush — required on wall cleats so the back face sits perfectly flat against the wall (a recessed screw head causes the cleat to rock). Countersink angle follows bolt preset (90° metric, 82° UNC).",
+      "type": "boolean",
+      "default": true,
+      "group": "hardware"
+    },
+    {
+      "key": "slottedHoles",
+      "label": "Slotted holes",
+      "description": "Elongate holes along X for adjustment when fitting to existing screws or aligning multiple cleats horizontally on a wall.",
+      "type": "boolean",
+      "default": false,
+      "group": "hardware"
+    },
+    {
+      "key": "slotOversizeMm",
+      "label": "Extra slot length",
+      "description": "Added length (mm) along X beyond the bolt clearance diameter.",
+      "type": "number",
+      "default": 3,
+      "min": 0.5,
+      "max": 20,
+      "step": 0.5,
+      "group": "hardware",
+      "unit": "mm"
+    },
+    {
+      "key": "minHoleEdgeClearance",
+      "label": "Minimum hole-to-edge",
+      "description": "Keeps hole centres away from cleat ends and from the wedge bevel so screw heads don't break out and don't intersect the bevelled face on the back.",
+      "type": "number",
+      "default": 3,
+      "min": 1,
+      "max": 12,
+      "step": 0.5,
+      "group": "fit",
+      "unit": "mm"
+    },
+    {
+      "key": "xyHoleCompensation",
+      "label": "XY hole compensation",
+      "description": "Extra radius on holes for printer tolerance (subtract from nominal).",
+      "type": "number",
+      "default": 0.1,
+      "min": 0,
+      "max": 0.5,
+      "step": 0.02,
+      "group": "fit",
+      "unit": "mm",
+      "advanced": true
+    }
+  ],
+  "preview": {
+    "cameraPosition": [120, 80, 80],
+    "target": [40, 9, 25]
+  }
+}

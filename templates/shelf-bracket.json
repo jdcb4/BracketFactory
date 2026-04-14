@@ -1,0 +1,250 @@
+{
+  "id": "shelf-bracket",
+  "name": "Shelf bracket",
+  "alternativeNames": "Shelf brace, triangular bracket, cantilever shelf support, wall shelf bracket",
+  "description": "Triangular wall shelf support: a vertical wall leg, a horizontal shelf leg, and a diagonal brace forming a truss in the X–Z plane. Distinct from the angle bracket (which uses thin gussets across Y) — here the brace is a full-width web spanning the open corner, sized for cantilever shelf loads. Print on its side (one triangular face down) so layer lines run along the load path and no supports are needed; the bracket width then becomes the print height.",
+  "thumbnail": "thumbnails/shelf-bracket.png",
+  "category": "shelf",
+  "version": "1.0.0",
+  "generationStrategy": "shelfBracket",
+  "units": "mm",
+  "parameters": [
+    {
+      "key": "wallLegHeight",
+      "label": "Wall leg height",
+      "description": "Height of the vertical leg that screws to the wall (along Z). Taller wall legs spread mounting forces over more screws and reduce wall-anchor pull-out.",
+      "type": "number",
+      "default": 80,
+      "min": 30,
+      "max": 300,
+      "step": 0.5,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "shelfLegLength",
+      "label": "Shelf leg length",
+      "description": "Length of the horizontal leg the shelf board rests on (along X, from the wall outward). Often slightly less than the shelf board depth so the bracket is hidden.",
+      "type": "number",
+      "default": 100,
+      "min": 30,
+      "max": 300,
+      "step": 0.5,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "width",
+      "label": "Bracket width",
+      "description": "Depth of the bracket along Y — how thick the bracket appears when viewed from the front. Becomes the print height when laid flat on the side. Wider = stiffer but uses more filament and prints taller.",
+      "type": "number",
+      "default": 12,
+      "min": 6,
+      "max": 60,
+      "step": 0.5,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "legThickness",
+      "label": "Leg thickness",
+      "description": "Wall thickness of the wall leg and shelf leg (the two outer flats of the triangle).",
+      "type": "number",
+      "default": 4,
+      "min": 2,
+      "max": 12,
+      "step": 0.1,
+      "group": "dimensions",
+      "unit": "mm"
+    },
+    {
+      "key": "style",
+      "label": "Bracket style",
+      "description": "Triangular = full diagonal brace from the bottom of the wall leg to the end of the shelf leg (load-bearing). L-shaped = no brace, just the two legs (light loads only).",
+      "type": "select",
+      "default": "triangular",
+      "group": "dimensions",
+      "options": [
+        { "value": "triangular", "label": "Triangular (braced)" },
+        { "value": "l-shaped", "label": "L-shaped (no brace)" }
+      ]
+    },
+    {
+      "key": "braceThickness",
+      "label": "Brace thickness",
+      "description": "Wall thickness of the diagonal brace web. For shelf loads above ~5 kg, keep at or above the leg thickness. Ignored when style = L-shaped.",
+      "type": "number",
+      "default": 4,
+      "min": 2,
+      "max": 12,
+      "step": 0.1,
+      "group": "reinforcement",
+      "unit": "mm"
+    },
+    {
+      "key": "braceFootOffset",
+      "label": "Brace foot offset (up wall)",
+      "description": "Distance up the wall leg where the diagonal brace meets it (0 = brace meets the very bottom corner, maximum leverage). Raising the foot shortens and stiffens the brace but reduces the effective brace angle and may foul the lower mounting screws. Ignored when style = L-shaped.",
+      "type": "number",
+      "default": 0,
+      "min": 0,
+      "max": 200,
+      "step": 0.5,
+      "group": "reinforcement",
+      "unit": "mm"
+    },
+    {
+      "key": "lighteningCutout",
+      "label": "Lightening cutout in brace",
+      "description": "Removes a triangular pocket from the centre of the brace web to save filament with little stiffness loss (the perimeter web carries most of the bending load). Disable for maximum strength or a cleaner aesthetic.",
+      "type": "boolean",
+      "default": true,
+      "group": "reinforcement"
+    },
+    {
+      "key": "lighteningMargin",
+      "label": "Lightening edge margin",
+      "description": "Material kept around the lightening cutout (mm to each brace edge). Smaller = lighter but more flex. Ignored when lightening is off.",
+      "type": "number",
+      "default": 6,
+      "min": 3,
+      "max": 30,
+      "step": 0.5,
+      "group": "reinforcement",
+      "unit": "mm"
+    },
+    {
+      "key": "innerFilletRadius",
+      "label": "Inner corner fillet",
+      "description": "Radius at the inside corner where the wall leg meets the shelf leg (and where the brace meets each leg). Reduces stress concentration — the most common failure point in shelf brackets under load.",
+      "type": "number",
+      "default": 3,
+      "min": 0,
+      "max": 15,
+      "step": 0.5,
+      "group": "reinforcement",
+      "unit": "mm"
+    },
+    {
+      "key": "holeDiameter",
+      "label": "Hole diameter",
+      "description": "Used when \"Custom\" bolt size is selected in the mounting section. Same diameter for wall and shelf holes.",
+      "type": "number",
+      "default": 4.5,
+      "min": 2,
+      "max": 12,
+      "step": 0.1,
+      "group": "hardware",
+      "unit": "mm"
+    },
+    {
+      "key": "wallHoleCount",
+      "label": "Wall mounting holes",
+      "description": "Through-holes along the wall leg for screws into the wall (drywall anchors, masonry plugs, or studs). Distributed evenly between the edge offsets along Z.",
+      "type": "integer",
+      "default": 2,
+      "min": 1,
+      "max": 6,
+      "group": "hardware"
+    },
+    {
+      "key": "shelfHoleCount",
+      "label": "Shelf mounting holes",
+      "description": "Through-holes along the shelf leg for screws into the underside of the shelf board. Set 0 to omit (rely on the shelf's weight or tape/adhesive).",
+      "type": "integer",
+      "default": 2,
+      "min": 0,
+      "max": 6,
+      "group": "hardware"
+    },
+    {
+      "key": "edgeOffset",
+      "label": "Hole edge offset",
+      "description": "Inset from each leg's free end for the first/last hole centre (also used as the wall-side inset on the shelf leg).",
+      "type": "number",
+      "default": 10,
+      "min": 3,
+      "max": 50,
+      "step": 0.5,
+      "group": "hardware",
+      "unit": "mm"
+    },
+    {
+      "key": "wallHoleCountersunk",
+      "label": "Countersink wall holes",
+      "description": "Conical recess on the wall-facing side of the wall leg so flat-head screw heads sit flush against the wall. Countersink angle follows bolt preset (90° metric, 82° UNC).",
+      "type": "boolean",
+      "default": true,
+      "group": "hardware"
+    },
+    {
+      "key": "screwAccessSlots",
+      "label": "Screw-access slots through brace",
+      "description": "Adds a slot through the brace web aligned with each shelf-leg hole so a screwdriver can reach the shelf screws after the bracket is mounted. Strongly recommended whenever shelf holes are present and a triangular brace blocks tool access from below — a frequent printability omission in popular community designs.",
+      "type": "boolean",
+      "default": true,
+      "group": "hardware"
+    },
+    {
+      "key": "screwAccessSlotDiameter",
+      "label": "Access slot diameter",
+      "description": "Diameter of the screwdriver clearance slot through the brace. Size for the screwdriver shaft + a few mm clearance, not the screw head.",
+      "type": "number",
+      "default": 8,
+      "min": 4,
+      "max": 20,
+      "step": 0.5,
+      "group": "hardware",
+      "unit": "mm"
+    },
+    {
+      "key": "slottedWallHoles",
+      "label": "Slotted wall holes",
+      "description": "Elongate wall mounting holes vertically (along Z) for height adjustment when fitting to existing screws or levelling on uneven walls.",
+      "type": "boolean",
+      "default": false,
+      "group": "hardware"
+    },
+    {
+      "key": "slotOversizeMm",
+      "label": "Extra slot length",
+      "description": "Added vertical slot length (mm) beyond the bolt clearance diameter on the wall leg.",
+      "type": "number",
+      "default": 3,
+      "min": 0.5,
+      "max": 20,
+      "step": 0.5,
+      "group": "hardware",
+      "unit": "mm"
+    },
+    {
+      "key": "minHoleEdgeClearance",
+      "label": "Minimum hole-to-edge",
+      "description": "Keeps hole centres away from leg edges and from the brace, so holes cannot break out and screws cannot foul the brace web.",
+      "type": "number",
+      "default": 3,
+      "min": 1,
+      "max": 12,
+      "step": 0.5,
+      "group": "fit",
+      "unit": "mm"
+    },
+    {
+      "key": "xyHoleCompensation",
+      "label": "XY hole compensation",
+      "description": "Extra radius on holes for printer tolerance (subtract from nominal).",
+      "type": "number",
+      "default": 0.1,
+      "min": 0,
+      "max": 0.5,
+      "step": 0.02,
+      "group": "fit",
+      "unit": "mm",
+      "advanced": true
+    }
+  ],
+  "preview": {
+    "cameraPosition": [140, 110, 110],
+    "target": [40, 6, 35]
+  }
+}
