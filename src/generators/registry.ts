@@ -199,7 +199,6 @@ export function generateFromStrategy(strategy: string, raw: ParamRecord): Geom3 
         buttressed: bool(p, 'buttressed', false),
         buttressHeight: num(p, 'buttressHeight', 10),
         buttressThickness: num(p, 'buttressThickness', 2),
-        edgeChamfer: num(p, 'edgeChamfer', 0.4),
         bridgeSupport: bool(p, 'bridgeSupport', false),
         xyHoleCompensation: num(p, 'xyHoleCompensation', 0.1),
         minHoleEdgeClearance: num(p, 'minHoleEdgeClearance', 2),

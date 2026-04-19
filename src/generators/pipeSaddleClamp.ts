@@ -5,7 +5,7 @@ import { holeCenters1dGrid, subtractThroughHole } from '../geometry/holeOps'
 const { union } = booleans
 const { extrudeLinear } = extrusions
 const { polygon, cuboid } = primitives
-const { translate, rotateY } = transforms
+const { translate, rotateX, rotateY } = transforms
 
 export interface PipeSaddleClampParams {
   pipeDiameter: number
@@ -25,17 +25,23 @@ export interface PipeSaddleClampParams {
   buttressed: boolean
   buttressHeight: number
   buttressThickness: number
-  edgeChamfer: number
   bridgeSupport: boolean
   xyHoleCompensation: number
   minHoleEdgeClearance: number
   countersinkIncludedAngleDeg?: number
 }
 
-function arcPoints(r: number, zc: number, alpha: number, steps: number, clockwise: boolean): [number, number][] {
+/** Points on an arc of radius r centred on (0, zc), swept from −α to +α. `forward` flips direction. */
+function arcPoints(
+  r: number,
+  zc: number,
+  alpha: number,
+  steps: number,
+  forward: boolean,
+): [number, number][] {
   const out: [number, number][] = []
   for (let i = 0; i <= steps; i++) {
-    const u = clockwise ? i / steps : 1 - i / steps
+    const u = forward ? i / steps : 1 - i / steps
     const t = -alpha + 2 * alpha * u
     out.push([r * Math.sin(t), zc - r * Math.cos(t)])
   }
@@ -43,48 +49,94 @@ function arcPoints(r: number, zc: number, alpha: number, steps: number, clockwis
 }
 
 /**
- * Pipe saddle: annular sector strap + flat base with side tabs (holes along X on each tab).
+ * Map a polygon-in-(y_b, z_b) + extrusion-along-Z solid onto the final bracket frame where the
+ * extrusion axis becomes +x_b. This is the same rotation pair used by the French cleat — it avoids
+ * a subtle bug where `rotateY(-π/2)` leaves the extrusion on −X and every downstream operation
+ * (unions, hole placements) silently misaligns.
+ */
+function alignYZExtrusionToX(solid: Geom3): Geom3 {
+  return rotateX(Math.PI / 2, rotateY(Math.PI / 2, solid))
+}
+
+/**
+ * Pipe saddle clamp: open cradle that catches a round pipe from below, with a flat base and side
+ * tabs for screw-down mounting. Pipe axis runs along +X; base sits flat on the bed (z=0); saddle
+ * opens upward (+Z).
+ *
+ * Strap cross-section is an annular sector centred at (0, zc) where zc = baseT + lift + Ri is the
+ * pipe-centre height. The sector is swept ±α from vertical with α = wrapAngle/2 — so wrap = 180°
+ * is a half-circle cradle, < 180° is a shallow saddle, > 180° wraps past the equator for snap
+ * retention (requires a flexible material).
  */
 export function generatePipeSaddleClamp(p: PipeSaddleClampParams): Geom3 {
-  const W = p.strapWidth
+  const W = Math.max(4, p.strapWidth)
+  const strapT = Math.max(1, p.strapThickness)
   const Ri = Math.max(1, (p.pipeDiameter + p.pipeClearance) / 2)
-  const Ro = Ri + p.strapThickness
-  const baseT = p.baseThickness
+  const Ro = Ri + strapT
+  const baseT = Math.max(1, p.baseThickness)
   const lift = Math.max(0, p.pipeLift)
   const zc = baseT + lift + Ri
-  const α = ((p.wrapAngle / 2) * Math.PI) / 180
+  const wrapDeg = Math.min(270, Math.max(120, p.wrapAngle))
+  const alpha = ((wrapDeg / 2) * Math.PI) / 180
 
-  const steps = 32
-  const outerFwd = arcPoints(Ro, zc, α, steps, true)
-  const innerBack = arcPoints(Ri, zc, α, steps, false)
-  const pts: [number, number][] = [...outerFwd, ...innerBack]
+  // Annular sector polygon walked outer-forward then inner-back so winding is CCW.
+  const steps = 48
+  const pts: [number, number][] = [
+    ...arcPoints(Ro, zc, alpha, steps, true),
+    ...arcPoints(Ri, zc, alpha, steps, false),
+  ]
 
   let strap: Geom3 = extrudeLinear({ height: W }, polygon({ points: pts }))
-  strap = rotateY(-Math.PI / 2, strap)
-  strap = translate([0, 0, baseT], strap)
+  strap = alignYZExtrusionToX(strap)
 
-  const tabReach = Ro + p.tabLength
+  const tabReach = Ro + Math.max(2, p.tabLength)
   const base: Geom3 = translate([W / 2, 0, baseT / 2], cuboid({ size: [W, 2 * tabReach, baseT] }))
-
   let solid: Geom3 = union(base, strap)
 
-  // Simple side buttresses: thin boxes at x≈0 and x≈W along the outer Y edges.
+  // Triangular gussets (buttresses): a right-triangle rib on each Y side, at each X end of the
+  // strap. Rib braces the saddle's outer-arc endpoint down to the base top, extending outward
+  // along +Y (or −Y) by buttressHeight. Extrudes along +X for buttressThickness — so a 2020-style
+  // corner gusset, not a floating cube.
   if (p.buttressed && p.buttressHeight > 1 && p.buttressThickness > 0.3) {
-    const bh = Math.min(p.buttressHeight, zc - baseT)
-    const bt = Math.min(p.buttressThickness, W * 0.35)
-    const y0 = tabReach - bt / 2
-    const plate = cuboid({ size: [bt, bt, bh] })
-    solid = union(
-      solid,
-      translate([bt / 2, y0, baseT + bh / 2], plate),
-      translate([W - bt / 2, y0, baseT + bh / 2], plate),
-    )
+    const availOutward = Math.max(0, tabReach - Ro * Math.sin(alpha) - 1)
+    const bh = Math.min(p.buttressHeight, availOutward)
+    const bt = Math.min(p.buttressThickness, Math.max(0.6, W * 0.5))
+    if (bh > 1 && bt > 0.3) {
+      const endpointY = Ro * Math.sin(alpha)
+      const endpointZ = Math.max(baseT + 0.5, zc - Ro * Math.cos(alpha))
+      for (const sign of [1, -1] as const) {
+        // CCW triangle (y, z): saddle endpoint → directly below on base → outward on base.
+        const triPts: [number, number][] =
+          sign > 0
+            ? [
+                [endpointY, endpointZ],
+                [endpointY, baseT],
+                [endpointY + bh, baseT],
+              ]
+            : [
+                [-endpointY, endpointZ],
+                [-(endpointY + bh), baseT],
+                [-endpointY, baseT],
+              ]
+        for (const xPos of [0, W - bt]) {
+          let gusset: Geom3 = extrudeLinear({ height: bt }, polygon({ points: triPts }))
+          gusset = alignYZExtrusionToX(gusset)
+          gusset = translate([xPos, 0, 0], gusset)
+          solid = union(solid, gusset)
+        }
+      }
+    }
   }
 
+  // Mounting holes through the tabs, vertical (along Z). One column on each Y side of the saddle.
   const holeR = Math.max(0.15, p.mountHoleDiameter / 2 + p.xyHoleCompensation)
   const minE = p.minHoleEdgeClearance
   const xs = holeCenters1dGrid(Math.round(p.mountHoleCount), W, p.edgeOffset, 0, holeR, minE)
-  const yHole = Math.max(minE + holeR, tabReach - p.edgeOffset)
+  // Seat the hole in the flat tab: at least (Ro + margin) from centre (clear of the saddle wall),
+  // no closer than edgeOffset from the outer Y edge of the base.
+  const yHoleMin = Ro + holeR + minE
+  const yHoleMax = tabReach - Math.max(p.edgeOffset, holeR + minE)
+  const yHole = yHoleMax >= yHoleMin ? yHoleMax : (yHoleMin + yHoleMax) / 2
   const slotExtra = p.slottedHoles ? Math.max(0, p.slotOversizeMm) : 0
   const csDeg = p.countersinkIncludedAngleDeg ?? 90
 
@@ -107,18 +159,19 @@ export function generatePipeSaddleClamp(p: PipeSaddleClampParams): Geom3 {
     }
   }
 
+  // Sacrificial bridge support: a thin wall at y=0 spanning from base top up to the saddle's outer
+  // arc midpoint. Only relevant when there's a visible gap (i.e., lift > strapT). Snip after
+  // printing — it's 0.6 mm thick, one perimeter wide.
   if (p.bridgeSupport) {
-    const span = Math.max(0, zc - Ri - baseT - 1)
-    if (span > 2) {
+    const gap = lift - strapT
+    if (gap > 1) {
       const strut = translate(
-        [W / 2, 0, baseT + span / 2],
-        cuboid({ size: [Math.min(3, W * 0.15), Math.min(4, tabReach * 0.2), span] }),
+        [W / 2, 0, baseT + gap / 2],
+        cuboid({ size: [Math.max(2, W - 1), 0.6, gap] }),
       )
       solid = union(solid, strut)
     }
   }
-
-  void p.edgeChamfer
 
   return solid
 }

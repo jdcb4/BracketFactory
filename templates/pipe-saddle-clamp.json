@@ -5,7 +5,7 @@
   "description": "Curved cradle that wraps over a round pipe/conduit/hose, with a flat base and side tabs for screw-down mounting. Pipe axis runs along X; base sits flat on the bed (saddle opens +Z). The underside of the saddle is a bridge — keep diameter modest or enable the bridge support strut. For large pipes, print on the side (rotate about X) for stronger layer orientation.",
   "thumbnail": "thumbnails/pipe-saddle-clamp.png",
   "category": "clamp",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "generationStrategy": "pipeSaddleClamp",
   "units": "mm",
   "parameters": [
@@ -170,15 +170,15 @@
     {
       "key": "buttressed",
       "label": "Side buttresses",
-      "description": "Adds triangular gussets on the outsides of the saddle (front and back faces in X) to brace the cradle against the base. Recommended for pipes ≥ 30 mm or any cantilever load on the pipe.",
+      "description": "Adds triangular gussets at each X end of the saddle, bracing the outer arc endpoint down to the base top. Recommended for pipes ≥ 30 mm or any cantilever / lateral load on the pipe. Capped automatically so the gusset fits inside the tab.",
       "type": "boolean",
       "default": false,
       "group": "reinforcement"
     },
     {
       "key": "buttressHeight",
-      "label": "Buttress height",
-      "description": "How far each buttress rises up the saddle wall from the base (along Z). Capped to the saddle outer height.",
+      "label": "Buttress reach",
+      "description": "How far each gusset extends outward along the base (Y axis) from the saddle's outer edge. The gusset hypotenuse runs from the saddle endpoint down to this reach, so larger values = shallower, more-printable angle. Capped to the available tab length.",
       "type": "number",
       "default": 10,
       "min": 3,
@@ -190,7 +190,7 @@
     {
       "key": "buttressThickness",
       "label": "Buttress thickness",
-      "description": "Buttress extent along the pipe axis (X). Centered on each saddle face so changing thickness grows equally to both sides.",
+      "description": "Gusset extent along the pipe axis (X). One gusset sits at x=0 and one at x=W on each Y side (4 gussets total), so the gusseted bands take bt off each end of the strap's clear inner width.",
       "type": "number",
       "default": 2,
       "min": 1,
@@ -200,22 +200,9 @@
       "unit": "mm"
     },
     {
-      "key": "edgeChamfer",
-      "label": "Saddle edge chamfer",
-      "description": "Small chamfer on the top open edge of the saddle so the pipe slides in cleanly and stress concentrates less. 0 disables.",
-      "type": "number",
-      "default": 0.4,
-      "min": 0,
-      "max": 2,
-      "step": 0.1,
-      "group": "reinforcement",
-      "unit": "mm",
-      "advanced": true
-    },
-    {
       "key": "bridgeSupport",
       "label": "Bridge support strut",
-      "description": "Adds a thin sacrificial wall under the saddle bridge (between pipe bottom and base) to assist FDM bridging. Snip away after printing. Auto-suggested when the underside span exceeds the printability warning threshold (~10 mm).",
+      "description": "Adds a thin (0.6 mm) sacrificial wall at y=0 spanning from the base top up to the saddle outer arc midpoint. Only takes effect when pipe lift exceeds strap thickness (otherwise the saddle merges with the base and no gap exists). Snip away after printing.",
       "type": "boolean",
       "default": false,
       "group": "print"

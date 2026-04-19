@@ -45,4 +45,36 @@ describe('generators', () => {
     const withHolesCount = geometries.geom3.toPolygons(withHoles).length
     expect(withHolesCount).toBeGreaterThan(noHolesCount)
   })
+
+  it('pipe saddle: buttresses and bridge support actually add material', () => {
+    // Regression guard: the previous implementation silently no-op'd because (a) rotateY(-π/2)
+    // misaligned the strap from the base in X, and (b) the bridge-support condition
+    // span = lift - 1 never fired at the default lift=0.
+    const base = {
+      mountingBolt: 'M5' as const,
+      pipeDiameter: 25,
+      strapWidth: 18,
+      strapThickness: 3,
+      tabLength: 14,
+      baseThickness: 4,
+      wrapAngle: 180,
+    }
+    const plain = generateFromStrategy('pipeSaddleClamp', base)
+    const buttressed = generateFromStrategy('pipeSaddleClamp', {
+      ...base,
+      buttressed: true,
+      buttressHeight: 8,
+      buttressThickness: 2,
+    })
+    const withBridge = generateFromStrategy('pipeSaddleClamp', {
+      ...base,
+      pipeLift: 6, // must exceed strapThickness=3 for the strut to be created
+      bridgeSupport: true,
+    })
+    const plainN = geometries.geom3.toPolygons(plain).length
+    expect(geometries.geom3.toPolygons(buttressed).length).toBeGreaterThan(plainN)
+    expect(geometries.geom3.toPolygons(withBridge).length).toBeGreaterThan(
+      geometries.geom3.toPolygons(generateFromStrategy('pipeSaddleClamp', { ...base, pipeLift: 6 })).length,
+    )
+  })
 })
