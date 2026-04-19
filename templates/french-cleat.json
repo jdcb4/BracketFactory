@@ -5,7 +5,7 @@
   "description": "45° dovetail mating bracket for modular wall organisation. Generates either the wall half (mounts to the wall, hooked edge facing up) or the item half (mounts to the back of the thing being hung, hooked edge facing down) — the two interlock when the item is lowered onto the wall cleat. Length runs along X; back face sits flat on the bed (z=0) so the 45° face prints as a sloped top surface, no supports required. Print one of each in matching tolerance, and verify fit on a short test pair before committing to long runs.",
   "thumbnail": "thumbnails/french-cleat.png",
   "category": "cleat",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "generationStrategy": "frenchCleat",
   "units": "mm",
   "parameters": [
@@ -80,46 +80,6 @@
       "step": 0.05,
       "group": "fit",
       "unit": "mm"
-    },
-    {
-      "key": "lockTab",
-      "label": "Anti-lift lock tab",
-      "description": "Adds a small bump on the underside of the item cleat that engages a matching detent on the wall cleat, requiring a deliberate forward-and-up motion to remove. Prevents items being knocked off the wall accidentally — the most frequent complaint with plain cleats. Generated symmetrically on both halves so wall and item cleats engage correctly.",
-      "type": "boolean",
-      "default": false,
-      "group": "reinforcement"
-    },
-    {
-      "key": "lockTabDepth",
-      "label": "Lock tab depth",
-      "description": "How far the lock bump protrudes (mm). Larger = more secure but harder to install/remove. Ignored when lock tab is off.",
-      "type": "number",
-      "default": 1.5,
-      "min": 0.5,
-      "max": 4,
-      "step": 0.1,
-      "group": "reinforcement",
-      "unit": "mm"
-    },
-    {
-      "key": "endChamfer",
-      "label": "End chamfer",
-      "description": "Small chamfer on the X ends of the cleat for cleaner intersections when butting cleats together along a wall and to relieve sharp printed corners. 0 disables.",
-      "type": "number",
-      "default": 1,
-      "min": 0,
-      "max": 5,
-      "step": 0.1,
-      "group": "reinforcement",
-      "unit": "mm"
-    },
-    {
-      "key": "wedgeReinforcement",
-      "label": "Wedge tip reinforcement",
-      "description": "Slightly thickens the engaging tip of the wedge for strength on item cleats carrying heavier loads. Adds 1–2 mm of material at the tip without changing the mating geometry. Recommended for item cleats holding > 2 kg.",
-      "type": "boolean",
-      "default": false,
-      "group": "reinforcement"
     },
     {
       "key": "holeDiameter",
