@@ -234,7 +234,7 @@
     }
   ],
   "preview": {
-    "cameraPosition": [70, 70, 55],
-    "target": [10, 0, 12]
+    "cameraPosition": [55, 70, 55],
+    "target": [9, 0, 14]
   }
 }
