@@ -55,13 +55,36 @@ function innerBendArcPoints(L1: number, T: number, ir: number, segments: number)
   return out
 }
 
+/** Quarter-circle arc (XZ profile): outer corner fillet centered at (L1−ofr, ofr). Sweeps from the bottom face tangent (angle −π/2) to the outer vertical face tangent (angle 0). Interior points only; start/end emitted by caller. */
+function outerFilletArcPoints(L1: number, ofr: number, segments: number): [number, number][] {
+  const cx = L1 - ofr
+  const cz = ofr
+  const out: [number, number][] = []
+  for (let i = 1; i < segments; i++) {
+    const t = i / segments
+    const angle = -Math.PI / 2 + t * (Math.PI / 2)
+    out.push([cx + ofr * Math.cos(angle), cz + ofr * Math.sin(angle)])
+  }
+  return out
+}
+
 /**
  * L-shaped solid: one extruded CCW polygon in (x, z), then oriented to bracket (X, Y, Z).
- * Inner bend fillet is part of the profile (no cylinder subtract) so geom3.validate stays manifold.
+ * Inner bend fillet and outer corner fillet are part of the profile (no cylinder boolean)
+ * so geom3.validate stays manifold.
  */
-function lShapeSolid(L1: number, L2: number, W: number, T: number, ir: number): Geom3 {
+function lShapeSolid(L1: number, L2: number, W: number, T: number, ir: number, ofr: number): Geom3 {
   const points: [number, number][] = []
-  points.push([0, 0], [L1, 0], [L1, T + L2], [L1 - T, T + L2])
+  points.push([0, 0])
+  if (ofr > 0.15) {
+    // Outer corner fillet: sweep from bottom face → outer vertical face via quarter-circle.
+    points.push([L1 - ofr, 0])
+    points.push(...outerFilletArcPoints(L1, ofr, 24))
+    points.push([L1, ofr])
+  } else {
+    points.push([L1, 0])
+  }
+  points.push([L1, T + L2], [L1 - T, T + L2])
   if (ir > 0.15) {
     points.push([L1 - T, T + ir])
     points.push(...innerBendArcPoints(L1, T, ir, 24))
@@ -80,32 +103,41 @@ function lShapeSolid(L1: number, L2: number, W: number, T: number, ir: number): 
 /**
  * Triangular gusset: extruded triangle, rotated so thickness runs along +Y; right angle at inner bend.
  * `yCenter` is the mid-plane across the gusset thickness (changing thickness grows equally ±Y).
+ *
+ * After rotateX(π/2), the extruded prism's Y range is `[-gT, 0]` (extrusion axis was +Z, and
+ * rotateX(π/2) maps (x,y,z) → (x,-z,y)). So translating by `yCenter + gT/2` centres the prism on
+ * `yCenter`. Using `yCenter - gT/2` (the previous code) shifted the gusset by `-gT` from intended.
  */
 function gussetPrism(L1: number, T: number, gH: number, gT: number, yCenter: number): Geom3 {
   // CCW when viewed from outside the solid after rotateX/translate (was inverted vs L-bracket union).
   const tri = polygon({ points: [[0, 0], [0, gH], [-gH, 0]] })
   let g = extrudeLinear({ height: gT }, tri)
   g = rotateX(Math.PI / 2, g)
-  g = translate([L1 - T, yCenter - gT / 2, T], g)
+  g = translate([L1 - T, yCenter + gT / 2, T], g)
   return g
 }
 
 /**
- * L bracket: single solid L + optional inner fillet + optional gussets + holes.
+ * L bracket: single solid L + optional inner fillet + optional outer fillet + optional gussets + holes.
  */
 export function generateLBracket(p: LBracketParams): Geom3 {
-  void p.outerFilletRadius
-
   const L1 = p.leg1Length
   const L2 = p.leg2Length
   const W = p.width
   const T = p.thickness
-  const ir = p.innerBendRadius
+  // Inner bend radius: arc endpoints land at (L1-T+ir, T) and (L1-T, T+ir) on the inside corner,
+  // so ir must fit both legs' available bend-adjacent material. Cap at min(T, L2) with a small
+  // safety margin so the polygon can't self-intersect if the user cranks the slider.
+  const ir = Math.max(0, Math.min(p.innerBendRadius, T - 0.1, L2 - 0.1))
+  // Outer corner fillet: arc endpoints at (L1-ofr, 0) and (L1, ofr), so ofr must not exceed L1 or
+  // the leg-2 column height T+L2. In practice a chunky outer fillet ruins the silhouette, so cap
+  // at min(L1/2, T+L2-0.1) — a leg-2 that's all fillet is never what users want.
+  const ofr = Math.max(0, Math.min(p.outerFilletRadius, L1 / 2 - 0.1, T + L2 - 0.1))
   const holeR = Math.max(0.15, p.holeDiameter / 2 + p.xyHoleCompensation)
   const minE = p.minHoleEdgeClearance
   const slotEx = p.slottedHoles ? Math.max(0, p.slotOversizeMm) : 0
 
-  let solid: Geom3 = lShapeSolid(L1, L2, W, T, ir)
+  let solid: Geom3 = lShapeSolid(L1, L2, W, T, ir, ofr)
 
   const maxRows = maxHoleRowsAlongWidth(W, p.holeDiameter, p.edgeOffset, minE)
   const holeRows = Math.max(1, Math.min(Math.round(p.holeRows ?? 1), maxRows))

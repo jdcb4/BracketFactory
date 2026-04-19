@@ -5,7 +5,7 @@
   "description": "Perpendicular legs with optional inner-corner gussets and through-holes. Rests flat on the bottom face for printing.",
   "thumbnail": "thumbnails/l-bracket.png",
   "category": "angle",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "generationStrategy": "lBracket",
   "units": "mm",
   "parameters": [
@@ -60,11 +60,11 @@
     {
       "key": "innerBendRadius",
       "label": "Inner bend radius",
-      "description": "Relief cut inside the corner so the bend is not perfectly sharp.",
+      "description": "Quarter-circle relief on the inside corner of the bend (printer-friendly stress relief). Automatically capped to the plate thickness and leg-2 length so the arc never overflows the profile — bigger values are silently clamped.",
       "type": "number",
       "default": 1,
       "min": 0,
-      "max": 8,
+      "max": 6,
       "step": 0.1,
       "group": "reinforcement",
       "unit": "mm"
@@ -114,7 +114,7 @@
     {
       "key": "outerFilletRadius",
       "label": "Outer corner fillet",
-      "description": "Reserved for future outer-corner rounding (currently does not change mesh).",
+      "description": "Rounds the outer corner of the bend (between the bottom face and the outer vertical face) with a quarter-circle arc. Softens the silhouette and removes a sharp FDM corner. Automatically capped to half of leg-1 length so the fillet can never swallow the bracket.",
       "type": "number",
       "default": 0,
       "min": 0,
