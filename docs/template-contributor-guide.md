@@ -35,7 +35,7 @@ Use this when you need **new shapes** or **new parameters** that the current swi
 ### 2. Implement the generator
 
 - Add `src/generators/<yourModule>.ts`.
-- Export a function that returns a JSCAD **`Geom3`** (see `@jscad/modeling`). Existing examples: `generateFlatPlate`, `generateLBracket`, `generateUChannel`, `generateExtrusionBracket`.
+- Export a function that returns a JSCAD **`Geom3`** (see `@jscad/modeling`). Existing examples: `generateFlatPlate`, `generateLBracket`, `generateUChannel`, `generateShelfBracket`, `generateFrenchCleat`, `generatePipeSaddleClamp`.
 - **Reuse shared geometry** where it fits:
   - Holes, slots, countersinks: `src/geometry/holeOps.ts`, `src/geometry/holeLayout.ts`.
   - Other parts of the codebase follow the same patterns as sibling generators.
@@ -47,7 +47,7 @@ In `src/generators/registry.ts`:
 
 1. **Import** your `generate…` function.
 2. Add a **`case 'yourStrategy':`** branch that:
-   - Reads from the `ParamRecord` using `num`, `int`, `bool` (and narrow string unions where needed, like extrusion profile).
+   - Reads from the `ParamRecord` using `num`, `int`, `bool` (and narrow string unions where needed, e.g. `cleatType` or `style`).
    - Maps JSON parameter keys to your function’s **typed options object**.
 3. Understand **`prepareGeneratorParams`** (called before the switch): it resolves bolt presets to `holeDiameter` / `countersinkIncludedAngleDeg` and strips UI-only keys (`processId`, `mountingBolt`). Do not rely on those stripped keys inside the generator.
 

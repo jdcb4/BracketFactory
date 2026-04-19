@@ -9,7 +9,6 @@ describe('generators', () => {
       'cornerBracket',
       'flatPlate',
       'uChannel',
-      'extrusionBracket',
       'shelfBracket',
       'frenchCleat',
       'pipeSaddleClamp',

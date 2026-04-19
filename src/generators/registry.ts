@@ -1,6 +1,5 @@
 import type Geom3 from '@jscad/modeling/src/geometries/geom3/type'
 import { countersinkIncludedAngleDegForBolt, resolveClearanceHoleDiameterMm } from '../data/mountingHardware'
-import { generateExtrusionBracket } from './extrusionBracket'
 import { generateFlatPlate } from './flatPlate'
 import { generateFrenchCleat } from './frenchCleat'
 import { generateLBracket } from './lBracket'
@@ -113,26 +112,6 @@ export function generateFromStrategy(strategy: string, raw: ParamRecord): Geom3 
         length: num(p, 'length', 50),
         holeDiameter: num(p, 'holeDiameter', 4.5),
         holesPerFlange: int(p, 'holesPerFlange', 2),
-        edgeOffset: num(p, 'edgeOffset', 8),
-        xyHoleCompensation: num(p, 'xyHoleCompensation', 0.1),
-        minHoleEdgeClearance: num(p, 'minHoleEdgeClearance', 2),
-        countersunkHoles: bool(p, 'countersunkHoles', false),
-        slottedHoles: bool(p, 'slottedHoles', false),
-        slotOversizeMm: num(p, 'slotOversizeMm', 2),
-        countersinkIncludedAngleDeg: num(p, 'countersinkIncludedAngleDeg', 90),
-      })
-    case 'extrusionBracket':
-      return generateExtrusionBracket({
-        profile: (p.profile === '3030' || p.profile === '4040' ? p.profile : '2020') as
-          | '2020'
-          | '3030'
-          | '4040',
-        armLength: num(p, 'armLength', 40),
-        thickness: num(p, 'thickness', 4),
-        ridgeClearance: num(p, 'ridgeClearance', 0.2),
-        holeDiameter: num(p, 'holeDiameter', 4.5),
-        holeCount: int(p, 'holeCount', 2),
-        holeRows: int(p, 'holeRows', 1),
         edgeOffset: num(p, 'edgeOffset', 8),
         xyHoleCompensation: num(p, 'xyHoleCompensation', 0.1),
         minHoleEdgeClearance: num(p, 'minHoleEdgeClearance', 2),
