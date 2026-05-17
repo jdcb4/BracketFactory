@@ -1,6 +1,6 @@
 {
   "name": "bracketfactory",
-  "version": "0.6.3",
+  "version": "0.7.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@9.15.0",
@@ -11,7 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "build": "vite build",
-    "build:pages": "vite build --base=/BracketFactory2/",
+    "build:pages": "vite build --base=/BracketFactory/",
     "preview": "vite preview",
     "verify": "node scripts/verify.mjs"
   },

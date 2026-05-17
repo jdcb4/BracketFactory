@@ -2,6 +2,15 @@
 
 Notable changes by version. Newest at the top. Bumps follow `docs/VERSIONING.md`.
 
+## 0.7.0 - 2026-05-17
+
+- Added a GitHub Actions deployment pipeline that verifies and publishes the app
+  to GitHub Pages on every push to `master`.
+- Updated the GitHub Pages build base path for the `jdcb4/BracketFactory`
+  repository.
+- Changed the default production build to use relative asset paths for local
+  filesystem previews.
+
 ## 0.6.3 - 2026-05-17
 
 - Expanded angle bracket hole rows beyond two rows on wide brackets, with row limits derived from hardware pitch and bracket width.

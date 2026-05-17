@@ -19,20 +19,27 @@ pnpm run preview
 
 ## GitHub Pages
 
-The Pages base path is set in `vite.config.ts` and currently uses `/BracketFactory2/`. The Pages URL will be:
+GitHub Pages deployment is handled by `.github/workflows/deploy-pages.yml`.
+The workflow runs on every push to `master` and can also be started manually
+from the GitHub Actions tab.
+
+The Pages build uses the repository base path `/BracketFactory/`. The Pages URL
+will be:
 
 ```text
-https://<your-github-username>.github.io/BracketFactory2/
+https://<your-github-username>.github.io/BracketFactory/
 ```
 
 Repository setup:
 
-1. Push the project to GitHub. The repository name must match the Pages base path above.
+1. Push the project to GitHub as `BracketFactory`.
 2. Open `Settings -> Pages`.
 3. Set `Build and deployment` source to `GitHub Actions`.
-4. Push to `main` or run the workflow manually after one is added.
+4. Push a commit to `master`, or run `Deploy GitHub Pages` manually from
+   `Actions`.
 
-If the GitHub repository is renamed, update the `base` value in `vite.config.ts` to match and run:
+If the GitHub repository is renamed, update the `build:pages` base path in
+`package.json` to match and run:
 
 ```bash
 pnpm run build:pages
