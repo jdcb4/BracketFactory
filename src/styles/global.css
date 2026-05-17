@@ -1,0 +1,42 @@
+@import "./tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    min-height: 100%;
+    background: hsl(var(--surface-base));
+    color: hsl(var(--text-primary));
+    font-family: var(--font-family-body);
+  }
+
+  body {
+    min-height: 100vh;
+    margin: 0;
+  }
+
+  button,
+  input,
+  select {
+    font: inherit;
+  }
+
+  :focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+  }
+}
+
+@layer components {
+  .ui-button [data-icon] {
+    width: var(--icon-sm);
+    height: var(--icon-sm);
+    flex: 0 0 auto;
+  }
+}

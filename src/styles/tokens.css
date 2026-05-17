@@ -1,0 +1,86 @@
+:root {
+  --surface-base: 42 16% 94%;
+  --surface-raised: 44 24% 98%;
+  --surface-overlay: 42 19% 96%;
+  --surface-sunken: 45 18% 88%;
+
+  --text-primary: 214 19% 12%;
+  --text-secondary: 214 12% 33%;
+  --text-subtle: 214 8% 48%;
+  --text-on-accent: 42 26% 96%;
+
+  --accent-primary: 16 75% 42%;
+  --accent-success: 154 42% 34%;
+  --accent-warning: 38 78% 43%;
+  --accent-danger: 358 58% 46%;
+  --accent-info: 199 54% 36%;
+
+  --border-default: 39 18% 75%;
+  --border-subtle: 40 16% 84%;
+  --border-strong: 215 13% 28%;
+
+  --preview-face: hsl(43 34% 70%);
+  --preview-face-side: hsl(36 25% 45%);
+  --preview-line: hsl(214 18% 16%);
+  --preview-hole: hsl(214 21% 12%);
+  --preview-grid: hsl(40 16% 78%);
+  --preview-light: hsl(43 34% 96%);
+  --preview-ground-light: hsl(214 19% 18%);
+
+  --font-family-body: Aptos, "Segoe UI", sans-serif;
+  --font-family-display: Bahnschrift, Aptos, "Segoe UI", sans-serif;
+  --font-size-display: clamp(2.25rem, 5vw, 4.75rem);
+  --font-size-h1: 2rem;
+  --font-size-h2: 1.5rem;
+  --font-size-h3: 1.125rem;
+  --font-size-h4: 1rem;
+  --font-size-body: 1rem;
+  --font-size-body-sm: 0.875rem;
+  --font-size-caption: 0.75rem;
+  --line-height-display: 0.95;
+  --line-height-heading: 1.15;
+  --line-height-body: 1.6;
+  --line-height-caption: 1.4;
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+
+  --shadow-panel: 0 1.25rem 4rem hsl(214 19% 12% / 0.12);
+  --shadow-focus: 0 0 0 0.1875rem hsl(16 75% 42% / 0.25);
+  --icon-sm: 1rem;
+  --wizard-workspace-height: 43rem;
+}
+
+.dark {
+  --surface-base: 210 18% 9%;
+  --surface-raised: 210 16% 13%;
+  --surface-overlay: 210 15% 17%;
+  --surface-sunken: 210 20% 7%;
+
+  --text-primary: 38 24% 93%;
+  --text-secondary: 39 14% 75%;
+  --text-subtle: 40 9% 55%;
+  --text-on-accent: 42 26% 96%;
+
+  --accent-primary: 19 78% 48%;
+  --accent-success: 151 45% 44%;
+  --accent-warning: 40 84% 53%;
+  --accent-danger: 358 65% 58%;
+  --accent-info: 197 62% 53%;
+
+  --border-default: 210 12% 27%;
+  --border-subtle: 210 12% 20%;
+  --border-strong: 38 22% 82%;
+
+  --preview-face: hsl(43 31% 63%);
+  --preview-face-side: hsl(34 27% 36%);
+  --preview-line: hsl(40 21% 88%);
+  --preview-hole: hsl(210 18% 8%);
+  --preview-grid: hsl(210 12% 24%);
+  --preview-light: hsl(43 28% 92%);
+  --preview-ground-light: hsl(210 18% 10%);
+
+  --shadow-panel: 0 1.25rem 4rem hsl(210 20% 4% / 0.42);
+  --shadow-focus: 0 0 0 0.1875rem hsl(19 78% 48% / 0.3);
+}

@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BracketFactory MVP Wizard Outline</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #111417;
+        --panel: #1b2024;
+        --ink: #f0e8d8;
+        --muted: #b8ad99;
+        --line: #3b4044;
+        --accent: #d9612a;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: Aptos, Segoe UI, sans-serif;
+      }
+
+      main {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 48px 20px;
+      }
+
+      h1,
+      h2 {
+        font-family: Bahnschrift, Aptos, Segoe UI, sans-serif;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+      }
+
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        padding: 18px;
+      }
+
+      .step {
+        border-left: 3px solid var(--accent);
+        padding-left: 14px;
+      }
+
+      p,
+      li {
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      code {
+        color: var(--ink);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>BracketFactory MVP Wizard Outline</h1>
+      <p>
+        The MVP starts with one bracket type: a flat L bracket. The angle bracket remains visible as
+        a disabled future option so the product direction is clear without splitting the constraint
+        model too early. The working layout is a fixed-height wizard: the linked category ribbon
+        stays across the top, the active parameters stay in the left column, and the compact summary
+        plus interactive preview stay stacked on the right.
+      </p>
+
+      <section class="grid">
+        <article class="card step">
+          <h2>1. Type</h2>
+          <p>Choose Flat L Bracket. Angle Bracket is shown as coming next.</p>
+        </article>
+        <article class="card step">
+          <h2>2. Size</h2>
+          <p>Set leg lengths, leg width, and thickness. These values constrain every later step.</p>
+        </article>
+        <article class="card step">
+          <h2>3. Hardware</h2>
+          <p>
+            Select metric or screw hardware from a compact control, then choose through or
+            countersunk holes. The selected head diameter determines safe edge distance and pitch
+            when countersinking is enabled.
+          </p>
+        </article>
+        <article class="card step">
+          <h2>4. Holes</h2>
+          <p>Pick hole counts and rows within computed safe limits. Invalid counts are clamped.</p>
+        </article>
+        <article class="card step">
+          <h2>5. Export</h2>
+          <p>Review derived dimensions and download STL or 3MF generated in the browser.</p>
+        </article>
+      </section>
+
+      <h2>Constraint posture</h2>
+      <ul>
+        <li>
+          Hole centers stay away from edges using the larger of clearance-hole and countersink-head
+          protection.
+        </li>
+        <li>Hole pitch prevents both straight holes and countersink seats from overlapping.</li>
+        <li>Hole rows are limited by leg width and hardware clearance.</li>
+        <li>Inside-corner holes are excluded from the shared corner square.</li>
+        <li>The preview is an interactive Three.js mesh generated from the same JSCAD solid as export.</li>
+      </ul>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,4 @@
+{
+  "entry": ["src/**/*.{ts,tsx}", "vite.config.ts", "tailwind.config.ts"],
+  "ignorePatterns": ["dist/**", "node_modules/**", "coverage/**"]
+}
