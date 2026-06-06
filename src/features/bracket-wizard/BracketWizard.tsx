@@ -550,7 +550,7 @@ function AngleStepPanel({
         <NumberField
           label="Base flange"
           value={params.baseLength}
-          min={50}
+          min={10}
           max={180}
           suffix="mm"
           onChange={(value) => updateParam("baseLength", value)}
@@ -558,7 +558,7 @@ function AngleStepPanel({
         <NumberField
           label="Upright flange"
           value={params.uprightHeight}
-          min={50}
+          min={10}
           max={160}
           suffix="mm"
           onChange={(value) => updateParam("uprightHeight", value)}
@@ -601,7 +601,7 @@ function AngleStepPanel({
         <NumberField
           label="Base flange holes"
           value={params.baseHoles}
-          min={1}
+          min={0}
           max={constraints.maxBaseHoles}
           suffix={`max ${constraints.maxBaseHoles}`}
           onChange={(value) => updateParam("baseHoles", value)}
@@ -609,7 +609,7 @@ function AngleStepPanel({
         <NumberField
           label="Upright flange holes"
           value={params.uprightHoles}
-          min={1}
+          min={0}
           max={constraints.maxUprightHoles}
           suffix={`max ${constraints.maxUprightHoles}`}
           onChange={(value) => updateParam("uprightHoles", value)}

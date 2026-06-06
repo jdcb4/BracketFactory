@@ -50,6 +50,40 @@ describe("angle bracket constraints", () => {
     expect(constraints.maxUprightHoles).toBeLessThanOrEqual(6);
   });
 
+  it("allows 10 mm flanges with no holes", () => {
+    const normalized = normalizeAngleBracketParams({
+      ...defaultAngleBracketParams,
+      baseLength: 10,
+      uprightHeight: 10,
+      baseHoles: 0,
+      uprightHoles: 0,
+    });
+    const summary = summarizeAngleBracket(normalized);
+
+    expect(normalized.baseLength).toBe(10);
+    expect(normalized.uprightHeight).toBe(10);
+    expect(normalized.baseHoles).toBe(0);
+    expect(normalized.uprightHoles).toBe(0);
+    expect(summary.constraints.holeCenters).toHaveLength(0);
+    expect(summary.volume).toBeGreaterThan(0);
+  });
+
+  it("clamps holes to zero when a flange is too short for safe placement", () => {
+    const normalized = normalizeAngleBracketParams({
+      ...defaultAngleBracketParams,
+      baseLength: 10,
+      uprightHeight: 10,
+      baseHoles: 6,
+      uprightHoles: 6,
+    });
+    const constraints = deriveAngleBracketConstraints(normalized);
+
+    expect(constraints.maxBaseHoles).toBe(0);
+    expect(constraints.maxUprightHoles).toBe(0);
+    expect(normalized.baseHoles).toBe(0);
+    expect(normalized.uprightHoles).toBe(0);
+  });
+
   it("allows wide angle brackets up to 300 mm", () => {
     const normalized = normalizeAngleBracketParams({
       ...defaultAngleBracketParams,

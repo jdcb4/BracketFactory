@@ -19,15 +19,15 @@ const hardwareIds = hardwareOptions.map((option) => option.id) as [
   HardwareId,
   ...HardwareId[],
 ];
-const minBaseLength = 50;
+const minBaseLength = 10;
 const maxBaseLength = 180;
-const minUprightHeight = 50;
+const minUprightHeight = 10;
 const maxUprightHeight = 160;
 const minLegWidth = 26;
 const maxLegWidth = 300;
 const minThickness = 4;
 const maxThickness = 12;
-const minHolesPerFace = 1;
+const minHolesPerFace = 0;
 const maxHolesPerFace = 6;
 const minRows = 1;
 const maxRowsPerFace = 6;
@@ -456,10 +456,10 @@ function countAlongFace(
   const span = length - cornerThickness - edgeClearance * 2;
 
   if (span < 0) {
-    return 1;
+    return 0;
   }
 
-  return Math.max(1, Math.floor(span / minPitch) + 1);
+  return Math.max(0, Math.floor(span / minPitch) + 1);
 }
 
 function countRowsAcrossWidth(
@@ -485,7 +485,11 @@ function centersForFace(
   holeCount: number,
   rows: number,
 ): AngleHoleCenter[] {
-  const count = Math.max(1, holeCount);
+  if (holeCount <= 0) {
+    return [];
+  }
+
+  const count = holeCount;
   const start = thickness + edgeClearance;
   const end = length - edgeClearance;
   const along =
