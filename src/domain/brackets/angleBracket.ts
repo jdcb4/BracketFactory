@@ -339,9 +339,15 @@ export function buildAngleBracketGeometry(
                 segments: 64,
               })
             : transforms.translate(
-                [constraints.countersinkDepth / 2 - 0.1, center.y, center.z],
+                [
+                  safeParams.thickness -
+                    constraints.countersinkDepth / 2 +
+                    0.1,
+                  center.y,
+                  center.z,
+                ],
                 transforms.rotateY(
-                  -Math.PI / 2,
+                  Math.PI / 2,
                   primitives.cylinderElliptic({
                     height: constraints.countersinkDepth + 0.2,
                     startRadius: [

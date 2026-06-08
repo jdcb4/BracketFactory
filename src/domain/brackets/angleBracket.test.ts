@@ -184,4 +184,22 @@ describe("angle bracket constraints", () => {
     expect(summary.volume).toBeGreaterThan(0);
     expect(summary.constraints.countersinkAvailable).toBe(true);
   });
+
+  it("keeps countersunk holes valid on both angle bracket faces", () => {
+    const summary = summarizeAngleBracket({
+      ...defaultAngleBracketParams,
+      holeStyle: "countersunk",
+      thickness: 8,
+      hardware: "m5",
+      baseHoles: 1,
+      uprightHoles: 1,
+    });
+
+    expect(summary.constraints.holeCenters.some((hole) => hole.face === "base"))
+      .toBe(true);
+    expect(
+      summary.constraints.holeCenters.some((hole) => hole.face === "upright"),
+    ).toBe(true);
+    expect(summary.volume).toBeGreaterThan(0);
+  });
 });
