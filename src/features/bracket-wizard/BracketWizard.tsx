@@ -40,6 +40,15 @@ import {
   type HardwareId,
   type HoleStyle,
 } from "../../domain/brackets/flatLBracket";
+import {
+  buildUBracketGeometry,
+  defaultUBracketParams,
+  deriveUBracketConstraints,
+  normalizeUBracketParams,
+  summarizeUBracket,
+  type UBracketConstraints,
+  type UBracketParams,
+} from "../../domain/brackets/uBracket";
 import { cn } from "../../lib/cn";
 import { BracketPreview } from "./BracketPreview";
 
@@ -53,7 +62,7 @@ const steps = [
 ] as const;
 
 type StepId = (typeof steps)[number]["id"];
-type BracketTypeId = "flatL" | "angle";
+type BracketTypeId = "flatL" | "u" | "angle";
 type SummaryMetric = { label: string; value: string };
 
 export function BracketWizard() {
@@ -62,6 +71,7 @@ export function BracketWizard() {
   const [flatParams, setFlatParams] = useState<FlatLBracketParams>(
     defaultFlatLBracketParams,
   );
+  const [uParams, setUParams] = useState<UBracketParams>(defaultUBracketParams);
   const [angleParams, setAngleParams] = useState<AngleBracketParams>(
     defaultAngleBracketParams,
   );
@@ -73,9 +83,17 @@ export function BracketWizard() {
     () => normalizeAngleBracketParams(angleParams),
     [angleParams],
   );
+  const safeUParams = useMemo(
+    () => normalizeUBracketParams(uParams),
+    [uParams],
+  );
   const flatConstraints = useMemo(
     () => deriveFlatLBracketConstraints(safeFlatParams),
     [safeFlatParams],
+  );
+  const uConstraints = useMemo(
+    () => deriveUBracketConstraints(safeUParams),
+    [safeUParams],
   );
   const angleConstraints = useMemo(
     () => deriveAngleBracketConstraints(safeAngleParams),
@@ -89,22 +107,32 @@ export function BracketWizard() {
     () => summarizeAngleBracket(safeAngleParams),
     [safeAngleParams],
   );
+  const uSummary = useMemo(() => summarizeUBracket(safeUParams), [safeUParams]);
   const isAngle = bracketType === "angle";
+  const isU = bracketType === "u";
   const geometry = useMemo(
     () =>
       isAngle
         ? buildAngleBracketGeometry(safeAngleParams)
-        : buildFlatLBracketGeometry(safeFlatParams),
-    [isAngle, safeAngleParams, safeFlatParams],
+        : isU
+          ? buildUBracketGeometry(safeUParams)
+          : buildFlatLBracketGeometry(safeFlatParams),
+    [isAngle, isU, safeAngleParams, safeFlatParams, safeUParams],
   );
   const activeStepIndex = steps.findIndex((step) => step.id === activeStep);
   const canGoBack = activeStepIndex > 0;
   const canGoNext = activeStepIndex < steps.length - 1;
   const nextStep = canGoNext ? steps[activeStepIndex + 1] : undefined;
-  const bracketName = isAngle ? "Angle Bracket" : "Flat L Bracket";
+  const bracketName = isAngle
+    ? "Angle Bracket"
+    : isU
+      ? "U Bracket"
+      : "Flat L Bracket";
   const summaryLines = isAngle
     ? angleSummaryLines(safeAngleParams, angleConstraints, angleSummary)
-    : flatSummaryLines(safeFlatParams, flatConstraints, flatSummary);
+    : isU
+      ? uSummaryLines(safeUParams, uConstraints, uSummary)
+      : flatSummaryLines(safeFlatParams, flatConstraints, flatSummary);
 
   function updateFlatParam<Key extends keyof FlatLBracketParams>(
     key: Key,
@@ -124,10 +152,21 @@ export function BracketWizard() {
     );
   }
 
+  function updateUParam<Key extends keyof UBracketParams>(
+    key: Key,
+    value: UBracketParams[Key],
+  ) {
+    setUParams((current) =>
+      normalizeUBracketParams({ ...current, [key]: value }),
+    );
+  }
+
   function exportFile(format: ExportFormat) {
     const fileName = isAngle
       ? "bracketfactory-angle-bracket"
-      : "bracketfactory-flat-l-bracket";
+      : isU
+        ? "bracketfactory-u-bracket"
+        : "bracketfactory-flat-l-bracket";
 
     downloadGeometry(geometry, format, fileName);
   }
@@ -149,10 +188,10 @@ export function BracketWizard() {
             Parametric 3D-printable brackets
           </Heading>
           <Body className="mt-3 max-w-prose">
-            Build constrained flat L and angle brackets. The wizard keeps hole
-            spacing, edge clearance, countersinks, gussets, and export geometry
-            aligned so the preview and downloads come from the same printable
-            solid.
+            Build constrained flat L, U, and angle brackets. The wizard keeps
+            hole spacing, edge clearance, countersinks, gussets, and export
+            geometry aligned so the preview and downloads come from the same
+            printable solid.
           </Body>
         </header>
 
@@ -194,8 +233,12 @@ export function BracketWizard() {
                       flatParams={safeFlatParams}
                       flatSummary={flatSummary}
                       onSelectBracketType={setBracketType}
+                      uConstraints={uConstraints}
+                      uParams={safeUParams}
+                      uSummary={uSummary}
                       updateAngleParam={updateAngleParam}
                       updateFlatParam={updateFlatParam}
+                      updateUParam={updateUParam}
                     />
                   </div>
 
@@ -224,7 +267,13 @@ export function BracketWizard() {
               <SummaryPanel
                 bracketName={bracketName}
                 lines={summaryLines}
-                valid={isAngle ? angleConstraints.valid : flatConstraints.valid}
+                valid={
+                  isAngle
+                    ? angleConstraints.valid
+                    : isU
+                      ? uConstraints.valid
+                      : flatConstraints.valid
+                }
               />
 
               <Surface
@@ -339,6 +388,9 @@ type StepPanelProps = {
   flatParams: FlatLBracketParams;
   flatSummary: ReturnType<typeof summarizeFlatLBracket>;
   onSelectBracketType: (type: BracketTypeId) => void;
+  uConstraints: UBracketConstraints;
+  uParams: UBracketParams;
+  uSummary: ReturnType<typeof summarizeUBracket>;
   updateAngleParam: <Key extends keyof AngleBracketParams>(
     key: Key,
     value: AngleBracketParams[Key],
@@ -346,6 +398,10 @@ type StepPanelProps = {
   updateFlatParam: <Key extends keyof FlatLBracketParams>(
     key: Key,
     value: FlatLBracketParams[Key],
+  ) => void;
+  updateUParam: <Key extends keyof UBracketParams>(
+    key: Key,
+    value: UBracketParams[Key],
   ) => void;
 };
 
@@ -359,8 +415,12 @@ function StepPanel({
   flatParams,
   flatSummary,
   onSelectBracketType,
+  uConstraints,
+  uParams,
+  uSummary,
   updateAngleParam,
   updateFlatParam,
+  updateUParam,
 }: StepPanelProps) {
   if (activeStep === "type") {
     return (
@@ -370,6 +430,12 @@ function StepPanel({
           title="Flat L Bracket"
           description="Flat plate with perpendicular legs and through-face mounting holes."
           onClick={() => onSelectBracketType("flatL")}
+        />
+        <OptionButton
+          active={bracketType === "u"}
+          title="U Bracket"
+          description="Angle-style bracket with a base flange, two upright flanges, safe holes, and gussets."
+          onClick={() => onSelectBracketType("u")}
         />
         <OptionButton
           active={bracketType === "angle"}
@@ -389,6 +455,18 @@ function StepPanel({
         params={angleParams}
         summary={angleSummary}
         updateParam={updateAngleParam}
+      />
+    );
+  }
+
+  if (bracketType === "u") {
+    return (
+      <UStepPanel
+        activeStep={activeStep}
+        constraints={uConstraints}
+        params={uParams}
+        summary={uSummary}
+        updateParam={updateUParam}
       />
     );
   }
@@ -528,6 +606,128 @@ function FlatStepPanel({
   );
 }
 
+function UStepPanel({
+  activeStep,
+  constraints,
+  params,
+  summary,
+  updateParam,
+}: {
+  activeStep: StepId;
+  constraints: UBracketConstraints;
+  params: UBracketParams;
+  summary: ReturnType<typeof summarizeUBracket>;
+  updateParam: <Key extends keyof UBracketParams>(
+    key: Key,
+    value: UBracketParams[Key],
+  ) => void;
+}) {
+  if (activeStep === "size") {
+    return (
+      <Stack>
+        <NumberField
+          label="Base flange"
+          value={params.baseLength}
+          min={10}
+          max={180}
+          suffix="mm"
+          onChange={(value) => updateParam("baseLength", value)}
+        />
+        <NumberField
+          label="Upright flanges"
+          value={params.uprightHeight}
+          min={10}
+          max={160}
+          suffix="mm"
+          onChange={(value) => updateParam("uprightHeight", value)}
+        />
+        <NumberField
+          label="Bracket width"
+          value={params.legWidth}
+          min={26}
+          max={300}
+          suffix="mm"
+          onChange={(value) => updateParam("legWidth", value)}
+        />
+        <NumberField
+          label="Plate thickness"
+          value={params.thickness}
+          min={4}
+          max={12}
+          suffix="mm"
+          onChange={(value) => updateParam("thickness", value)}
+        />
+      </Stack>
+    );
+  }
+
+  if (activeStep === "hardware") {
+    return (
+      <HardwarePanel
+        constraints={constraints}
+        hardware={params.hardware}
+        holeStyle={params.holeStyle}
+        updateHardware={(value) => updateParam("hardware", value)}
+        updateHoleStyle={(value) => updateParam("holeStyle", value)}
+      />
+    );
+  }
+
+  if (activeStep === "holes") {
+    return (
+      <Stack>
+        <NumberField
+          label="Base flange holes"
+          value={params.baseHoles}
+          min={0}
+          max={constraints.maxBaseHoles}
+          suffix={`max ${constraints.maxBaseHoles}`}
+          onChange={(value) => updateParam("baseHoles", value)}
+        />
+        <NumberField
+          label="Holes per upright"
+          value={params.uprightHoles}
+          min={0}
+          max={constraints.maxUprightHoles}
+          suffix={`max ${constraints.maxUprightHoles}`}
+          onChange={(value) => updateParam("uprightHoles", value)}
+        />
+        <NumberField
+          label="Rows per face"
+          value={params.rows}
+          min={1}
+          max={constraints.maxRows}
+          suffix={`max ${constraints.maxRows}`}
+          onChange={(value) => updateParam("rows", value)}
+        />
+      </Stack>
+    );
+  }
+
+  if (activeStep === "gussets") {
+    return (
+      <AngleGussetPanel
+        constraints={constraints}
+        params={params}
+        updateGussetLayout={(value) => updateParam("gussetLayout", value)}
+        updateGussetSize={(value) => updateParam("gussetSizePercent", value)}
+      />
+    );
+  }
+
+  return (
+    <ExportReview
+      body={`This U bracket is normalized to ${Math.round(summary.dimensions[0])} by ${Math.round(
+        summary.dimensions[1],
+      )} by ${Math.round(summary.dimensions[2])} mm with ${constraints.holeCenters.length} safe ${
+        params.holeStyle === "countersunk" ? "countersunk" : "clearance"
+      } holes, ${constraints.selectedGussetOption.label.toLowerCase()}, and ${
+        getHardware(params.hardware).label
+      } hardware. Gusset ribs extend from both inside corners when enabled.`}
+    />
+  );
+}
+
 function AngleStepPanel({
   activeStep,
   constraints,
@@ -656,7 +856,10 @@ function AngleGussetPanel({
   updateGussetLayout,
   updateGussetSize,
 }: {
-  constraints: AngleBracketConstraints;
+  constraints: Pick<
+    AngleBracketConstraints,
+    "gussetOptions" | "selectedGussetOption"
+  >;
   params: AngleBracketParams;
   updateGussetLayout: (value: AngleGussetLayout) => void;
   updateGussetSize: (value: number) => void;
@@ -1009,6 +1212,35 @@ function flatSummaryLines(
   ];
 }
 
+function uSummaryLines(
+  params: UBracketParams,
+  constraints: UBracketConstraints,
+  summary: ReturnType<typeof summarizeUBracket>,
+): SummaryMetric[] {
+  return [
+    {
+      label: "Size",
+      value: `${params.baseLength} x ${params.legWidth} x ${params.uprightHeight} mm`,
+    },
+    { label: "Hardware", value: getHardware(params.hardware).label },
+    {
+      label: "Holes",
+      value: `${constraints.holeCenters.length} ${
+        params.holeStyle === "countersunk" ? "countersunk" : "through"
+      }`,
+    },
+    {
+      label: "Gussets",
+      value:
+        constraints.selectedGussetOption.ribCount === 0
+          ? "No ribs"
+          : `${constraints.selectedGussetOption.label}, ${params.gussetSizePercent}%`,
+    },
+    { label: "Clearance", value: `${constraints.edgeClearance} mm edge` },
+    { label: "Volume", value: `${Math.round(summary.volume / 1000)} cm3` },
+  ];
+}
+
 function angleSummaryLines(
   params: AngleBracketParams,
   constraints: AngleBracketConstraints,
@@ -1057,19 +1289,23 @@ function stepDescription(step: StepId, bracketType: BracketTypeId) {
   }
 
   const bracketLabel =
-    bracketType === "angle" ? "angle bracket" : "flat L bracket";
+    bracketType === "angle"
+      ? "angle bracket"
+      : bracketType === "u"
+        ? "U bracket"
+        : "flat L bracket";
   const descriptions: Record<Exclude<StepId, "type">, string> = {
     size: `Overall dimensions drive every later safety limit for this ${bracketLabel}.`,
     hardware:
       "Pick the fastener size and whether the hole is straight or countersunk.",
     holes:
-      bracketType === "angle"
+      bracketType === "angle" || bracketType === "u"
         ? "Hole counts and row layout are capped by the chosen size and hardware."
         : "Counts are capped by the chosen size, hardware, and countersink footprint.",
     gussets:
-      bracketType === "angle"
+      bracketType === "angle" || bracketType === "u"
         ? "Gusset layouts are filtered after hole rows are known."
-        : "Flat L brackets do not use gusset ribs.",
+        : `${bracketLabel[0].toUpperCase()}${bracketLabel.slice(1)}s do not use gusset ribs.`,
     export:
       "The generated solid is built locally from the same parameters shown here.",
   };

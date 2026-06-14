@@ -2,6 +2,16 @@
 
 Notable changes by version. Newest at the top. Bumps follow `docs/VERSIONING.md`.
 
+## 0.8.0 - 2026-06-14
+
+- Added a U bracket generator based on the angle bracket constraint model, with
+  a base flange, mirrored upright flanges, constrained holes, countersinking,
+  mirrored gussets, preview, and STL/3MF export.
+- Added U bracket wizard selection, preserved U-specific settings, summary
+  text, gusset controls, and user-facing tests.
+- Added U bracket domain tests for mirrored hole placement, clamping, gussets,
+  countersink fallback, and positive-volume geometry.
+
 ## 0.7.0 - 2026-05-17
 
 - Added a GitHub Actions deployment pipeline that verifies and publishes the app

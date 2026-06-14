@@ -4,7 +4,7 @@ The first stop for navigating this project.
 
 ## What this project is
 
-BracketFactory is a client-only React app for generating constrained, 3D-printable brackets in the browser. The MVP supports flat L and angle bracket wizards that build JSCAD geometry locally, preview the generated solid in an interactive Three.js viewer, and export STL or 3MF files.
+BracketFactory is a client-only React app for generating constrained, 3D-printable brackets in the browser. The MVP supports flat L, U, and angle bracket wizards that build JSCAD geometry locally, preview the generated solid in an interactive Three.js viewer, and export STL or 3MF files.
 
 ## Important folders
 

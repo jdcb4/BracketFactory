@@ -84,4 +84,33 @@ describe("App", () => {
       ),
     ).toBeInTheDocument();
   });
+
+  it("lets users choose a U bracket and configure upright holes and gussets", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /^u bracket/i }));
+    expect(
+      screen.getByText(
+        "Angle-style bracket with a base flange, two upright flanges, safe holes, and gussets.",
+      ),
+    ).toBeInTheDocument();
+
+    const holesStep = screen
+      .getAllByRole("button", { name: /holes/i })
+      .find((button) => button.textContent === "Holes");
+
+    expect(holesStep).toBeDefined();
+    await user.click(holesStep!);
+    expect(screen.getByText("Base flange holes")).toBeInTheDocument();
+    expect(screen.getByText("Holes per upright")).toBeInTheDocument();
+
+    const gussetsStep = screen
+      .getAllByRole("button", { name: /gussets/i })
+      .find((button) => button.textContent === "Gussets");
+
+    expect(gussetsStep).toBeDefined();
+    await user.click(gussetsStep!);
+    expect(screen.getByText("Gusset face coverage")).toBeInTheDocument();
+  });
 });

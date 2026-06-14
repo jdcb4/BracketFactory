@@ -51,6 +51,27 @@ Gusset rib depth is configurable from 25% to 100% of the face lengths.
 
 Countersunk angle bracket holes use the fastener head diameter for clearance and pitch limits. The option is disabled when plate thickness cannot leave at least 1.2 mm of material below the countersink.
 
+## U bracket model
+
+The U bracket reuses the angle bracket parameter and constraint model. It is
+formed from one horizontal base flange and two mirrored vertical upright
+flanges. Mounting holes are subtracted through the base and through both upright
+flanges. Optional triangular gusset ribs can be mirrored into both inside
+corners.
+
+U bracket holes are constrained by:
+
+- the same edge clearance, protected diameter, pitch, and row-count rules as
+  angle bracket holes;
+- exclusion from both upright thickness zones on the base flange;
+- base and upright hole counts capped independently by available safe length;
+- gusset layouts filtered by all active row positions, available clear width,
+  and protected hole bands.
+
+Countersunk U bracket holes use the fastener head diameter for clearance and
+pitch limits. The option is disabled when plate thickness cannot leave at least
+1.2 mm of material below the countersink.
+
 ## Persistence
 
 No persistence is implemented. If presets or saved designs are introduced later, start with JSON data validated with Zod. Move to a database only when JSON is insufficient and document the migration in `docs/DECISIONS.md`.
